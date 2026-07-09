@@ -5,7 +5,7 @@
 
 // Dummy URL (Replace with your Google Apps Script URL)
 const WEB_APP_URL =
-    "https://script.google.com/macros/s/AKfycbxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/exec";
+    "https://script.google.com/macros/s/AKfycbx3uwG9LDgR0-TOW2z_dytS8206ENNxEMaTxQkHllDAg0EGBNX_A9T4haZ-eS0Cks7EgQ/exec";
 
 //-----------------------------------------------------
 // Global Arrays
