@@ -3,393 +3,423 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional GST Invoice System</title>
+    <title>Dynamic GST Invoice Billing System</title>
     <style>
-        /* --- Core Styling & Reset --- */
+        /* --- Layout & Reset Specs --- */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #f4f6f9; color: #333; padding: 20px; }
+        body { background-color: #f3f4f6; color: #2d3748; padding: 25px; }
         
-        /* --- Invoice Container --- */
-        .invoice-container {
-            max-width: 900px;
+        .invoice-card {
+            max-width: 1000px;
             margin: 0 auto;
-            background: #fff;
-            padding: 40px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-            border-radius: 8px;
+            background: #ffffff;
+            padding: 35px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            border-radius: 10px;
         }
 
-        /* --- Grid & Layout Headers --- */
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 25px; }
-        .section-title { font-size: 14px; font-weight: bold; color: #555; text-transform: uppercase; border-bottom: 2px solid #eee; padding-bottom: 5px; margin-bottom: 12px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 30px; }
+        .section-title { font-size: 13px; font-weight: 700; color: #4a5568; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 15px; }
         
-        /* --- Business & Invoice Header --- */
-        .business-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 30px; border-bottom: 3px solid #333; padding-bottom: 20px; }
-        .logo-placeholder { width: 80px; height: 80px; background: #eaeaea; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #777; border-radius: 4px; }
-        .business-details { text-align: right; font-size: 14px; line-height: 1.5; }
-        .business-name { font-size: 24px; font-weight: 800; color: #111; margin-bottom: 4px; }
+        /* --- Business Header Branding --- */
+        .biz-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 35px; border-bottom: 3px solid #1a202c; padding-bottom: 20px; }
+        .logo-box { width: 90px; height: 90px; background: #edf2f7; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; color: #718096; border-radius: 6px; border: 1px dashed #cbd5e0; }
+        .biz-details { text-align: right; font-size: 14px; line-height: 1.6; }
+        .biz-name { font-size: 26px; font-weight: 800; color: #1a202c; margin-bottom: 5px; line-height: 1.1; }
         
-        /* --- Form Inputs --- */
-        .form-group { margin-bottom: 10px; display: flex; align-items: center; font-size: 14px; }
-        .form-group label { width: 130px; font-weight: 600; color: #444; }
-        .form-group input, .form-group select { flex: 1; padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
-        .form-group input:focus, .form-group select:focus { border-color: #4a90e2; outline: none; }
+        /* --- Interactive Form Elements --- */
+        .form-row { margin-bottom: 12px; display: flex; align-items: center; font-size: 14px; }
+        .form-row label { width: 140px; font-weight: 600; color: #4a5568; }
+        .form-row input, .form-row select { flex: 1; padding: 8px 12px; border: 1px solid #cbd5e0; border-radius: 5px; font-size: 14px; background-color: #fff; }
+        .form-row input:focus, .form-row select:focus { border-color: #3182ce; outline: none; box-shadow: 0 0 0 3px rgba(66,153,225,0.15); }
+        .form-row input[readonly] { background-color: #f7fafc; color: #718096; cursor: not-allowed; }
 
-        /* --- Table Styling --- */
-        .table-responsive { overflow-x: auto; margin: 30px 0; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
-        th { background: #f8f9fa; color: #444; font-weight: 600; padding: 10px 6px; border: 1px solid #dee2e6; }
-        td { padding: 8px 6px; border: 1px solid #dee2e6; vertical-align: middle; }
-        td input, td select { width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; font-size: 13px; }
+        /* --- Tabular Matrix Display --- */
+        .table-area { overflow-x: auto; margin: 30px 0; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { background: #edf2f7; color: #2d3748; font-weight: 700; padding: 12px 8px; border: 1px solid #e2e8f0; text-align: left; }
+        td { padding: 10px 8px; border: 1px solid #e2e8f0; vertical-align: middle; }
+        td input, td select { width: 100%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 13px; }
+        td input[readonly] { background: #f7fafc; border-color: #e2e8f0; }
         
-        /* Column width handling */
-        .w-sr { width: 40px; text-align: center; }
-        .w-prod { width: 180px; }
-        .w-small { width: 65px; }
-        .w-amt { width: 90px; font-weight: 600; text-align: right; }
+        .w-sr { width: 45px; text-align: center; }
+        .w-desc { width: 220px; }
+        .w-num { width: 80px; }
+        .w-amt { width: 105px; font-weight: 600; text-align: right; }
 
-        /* --- Action Controls --- */
-        .actions-bar { display: flex; gap: 10px; justify-content: flex-start; margin-bottom: 20px; }
-        .btn { padding: 10px 18px; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 14px; transition: background 0.2s; }
-        .btn-primary { background: #4a90e2; color: white; }
-        .btn-primary:hover { background: #357abd; }
-        .btn-secondary { background: #6c757d; color: white; }
-        .btn-secondary:hover { background: #5a6268; }
-        .btn-success { background: #28a745; color: white; }
-        .btn-success:hover { background: #218838; }
-        .btn-danger { background: #dc3545; color: white; padding: 4px 8px; font-size: 12px; }
-        .btn-danger:hover { background: #c82333; }
-        .btn-reset { background: #f8f9fa; color: #333; border: 1px solid #ccc; }
-        .btn-reset:hover { background: #e2e6ea; }
+        /* --- Interface Control Buttons --- */
+        .control-panel { display: flex; gap: 12px; margin-bottom: 25px; max-width: 1000px; margin: 0 auto 20px auto; }
+        .btn { padding: 10px 20px; border: none; border-radius: 5px; font-weight: 600; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease; }
+        .btn-add { background: #4a5568; color: white; }
+        .btn-add:hover { background: #2d3748; }
+        .btn-save { background: #38a169; color: white; }
+        .btn-save:hover { background: #2f855a; }
+        .btn-print { background: #3182ce; color: white; }
+        .btn-print:hover { background: #2b6cb0; }
+        .btn-clear { background: #e2e8f0; color: #4a5568; }
+        .btn-clear:hover { background: #cbd5e0; }
+        .btn-del { background: #e53e3e; color: white; padding: 6px 10px; font-size: 12px; border-radius: 4px; }
+        .btn-del:hover { background: #c53030; }
 
-        /* --- Summary Section --- */
-        .summary-wrapper { display: flex; justify-content: flex-end; margin-top: 20px; }
-        .summary-table { width: 350px; font-size: 14px; }
-        .summary-table td { padding: 8px 12px; border: 1px solid #dee2e6; }
-        .summary-table tr:last-child { font-weight: bold; background: #f8f9fa; font-size: 16px; }
+        /* --- Financial Abstract Alignment --- */
+        .summary-container { display: flex; justify-content: flex-end; margin-top: 25px; }
+        .summary-box { width: 380px; font-size: 14px; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; }
+        .summary-line { display: flex; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #e2e8f0; }
+        .summary-line:last-child { border-bottom: none; background: #f7fafc; font-weight: 700; font-size: 17px; color: #1a202c; border-top: 2px solid #cbd5e0; }
+        .val-field { font-weight: 600; text-align: right; }
 
-        /* --- Footer & Signatures --- */
-        .invoice-footer { margin-top: 50px; display: flex; justify-content: space-between; align-items: flex-end; }
-        .terms { max-width: 50%; font-size: 12px; color: #666; line-height: 1.5; }
-        .signature-area { text-align: center; font-size: 14px; width: 200px; }
-        .signature-line { border-top: 1px solid #333; margin-top: 60px; padding-top: 5px; font-weight: 600; }
+        /* --- Document Bottom Anchors --- */
+        .invoice-bottom { margin-top: 60px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .legal-notes { max-width: 55%; font-size: 12px; color: #718096; line-height: 1.6; }
+        .sign-block { text-align: center; font-size: 14px; width: 220px; }
+        .sign-line { border-top: 1px solid #4a5568; margin-top: 65px; padding-top: 6px; font-weight: 600; color: #2d3748; }
 
-        /* --- PRINT LAYOUT (A4 Portrait Integration) --- */
+        /* --- Strict A4 Portrait Print Viewport Engine --- */
         @media print {
-            body { background: none; padding: 0; color: #000; }
-            .invoice-container { max-width: 100%; width: 100%; box-shadow: none; padding: 0; margin: 0; }
-            .actions-bar, .btn-danger, .remove-col { display: none !important; }
-            input, select { border: none !important; appearance: none; -webkit-appearance: none; background: transparent; padding: 0 !important; }
+            body { background: transparent; padding: 0; color: #000; }
+            .invoice-card { max-width: 100%; width: 100%; box-shadow: none; padding: 0; margin: 0; }
+            .control-panel, .btn-del, .col-action { display: none !important; }
+            input, select { border: none !important; appearance: none; -webkit-appearance: none; background: transparent !important; padding: 0 !important; color: #000 !important; }
             input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-            table { font-size: 12px; }
-            th, td { padding: 6px 4px !important; }
-            @page { size: A4 portrait; margin: 15mm; }
+            th { background: #f7fafc !important; border: 1px solid #cbd5e0 !important; }
+            td { border: 1px solid #cbd5e0 !important; padding: 8px 4px !important; }
+            @page { size: A4 portrait; margin: 12mm; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Top Action Controls -->
-    <div class="invoice-container actions-bar">
-        <button class="btn btn-secondary" onclick="addNewRow()">+ Add Product</button>
-        <button class="btn btn-success" onclick="saveInvoice()">Save Bill</button>
-        <button class="btn btn-primary" onclick="window.print()">Print / Save PDF</button>
-        <button class="btn btn-reset" onclick="resetForm()">Reset</button>
+    <!-- Control Action Strips (Hidden During System Intermittent Prints) -->
+    <div class="control-panel">
+        <button class="btn btn-add" onclick="appendProductRow()">+ Add Product Line</button>
+        <button class="btn btn-save" onclick="dispatchInvoiceToSheets()">Save Bill Data</button>
+        <button class="btn btn-print" onclick="window.print()">Print / Save PDF</button>
+        <button class="btn btn-clear" onclick="flushFormLayout()">Reset Form</button>
     </div>
 
-    <!-- Main Invoice Document -->
-    <div class="invoice-container">
+    <!-- Active Form Document Context -->
+    <div class="invoice-card">
         
-        <!-- 1. Business Header -->
-        <header class="business-header">
-            <div class="logo-placeholder">
-                <!-- Replace with your real <img> tag -->
-                COMPANY LOGO
-            </div>
-            <div class="business-details">
-                <div class="business-name">Your Company Name</div>
-                <div>123, Business Galaxy, Commercial Hub, Mumbai - 400001</div>
-                <div><strong>GSTIN:</strong> 27AAAAA0000A1Z5</div>
-                <div><strong>Mobile:</strong> +91 98765 43210</div>
-                <div><strong>Email:</strong> billing@yourcompany.com</div>
+        <!-- Corporate Identification Element -->
+        <header class="biz-header">
+            <div class="logo-box">ENTERPRISE LOGO</div>
+            <div class="biz-details">
+                <div class="biz-name">Universal Solutions Private Limited</div>
+                <div>Infinity Benchmark, Plot G2, Block EP & GP, Sector V, Kolkata - 700091</div>
+                <div><strong>GSTIN:</strong> 19AAACU1234K1Z2</div>
+                <div><strong>Contact No:</strong> +91 33 4000 9000</div>
+                <div><strong>Email:</strong> finance@universalsolutions.co.in</div>
             </div>
         </header>
 
-        <!-- 2. Invoice Meta & Customer Grid -->
         <div class="grid-2">
-            <!-- Invoice Core Details -->
+            <!-- Part A: Metadata Matrix -->
             <div>
-                <div class="section-title">Invoice Details</div>
-                <div class="form-group">
-                    <label>Invoice Number</label>
-                    <input type="text" id="invoiceNum" value="INV-2026-001">
+                <div class="section-title">GST Invoice Details</div>
+                <div class="form-row">
+                    <label>Invoice No</label>
+                    <input type="text" id="invoiceNo" placeholder="E.g., INV/2026/0102">
                 </div>
-                <div class="form-group">
+                <div class="form-row">
                     <label>Invoice Date</label>
                     <input type="date" id="invoiceDate">
                 </div>
-                <div class="form-group">
-                    <label>Place of Supply</label>
-                    <input type="text" id="placeOfSupply" value="Maharashtra (27)">
-                </div>
-                <div class="form-group">
-                    <label>Payment Mode</label>
-                    <select id="paymentMode">
-                        <option value="Cash">Cash</option>
-                        <option value="UPI">UPI / QR Code</option>
-                        <option value="Bank Transfer">Bank Transfer</option>
-                        <option value="Credit">Credit</option>
-                    </select>
-                </div>
             </div>
 
-            <!-- Customer Details Section -->
+            <!-- Part B: Recipient Coordinates -->
             <div>
-                <div class="section-title">Customer Details</div>
-                <div class="form-group">
+                <div class="section-title">Customer Section</div>
+                <div class="form-row">
                     <label>Customer Name</label>
-                    <!-- Drops down dynamically. Triggers autofill script on change -->
-                    <select id="customerSelect" onchange="handleCustomerChange(this.value)">
-                        <option value="">-- Select Customer --</option>
-                        <option value="cust_1">Acme Corporations</option>
-                        <option value="cust_2">Wayne Enterprises</option>
-                        <option value="cust_3">Retail Walk-in Customer</option>
+                    <select id="customerDropdown" onchange="autoFillCustomerMetrics(this.value)">
+                        <option value="">-- Synchronizing Data Dropdown --</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label>Mobile Number</label>
-                    <input type="text" id="custMobile" placeholder="Auto-fills">
-                </div>
-                <div class="form-group">
+                <div class="form-row">
                     <label>GSTIN</label>
-                    <input type="text" id="custGstin" placeholder="Auto-fills / Optional">
+                    <input type="text" id="custGstin" readonly placeholder="Awaiting Selection">
                 </div>
-                <div class="form-group">
-                    <label>Billing Address</label>
-                    <input type="text" id="custAddress" placeholder="Auto-fills">
+                <div class="form-row">
+                    <label>Contact No</label>
+                    <input type="text" id="custContact" readonly placeholder="Awaiting Selection">
+                </div>
+                <div class="form-row">
+                    <label>Address</label>
+                    <input type="text" id="custAddress" readonly placeholder="Awaiting Selection">
                 </div>
             </div>
         </div>
 
-        <!-- 3. Dynamic Products Table -->
-        <div class="table-responsive">
-            <table id="productsTable">
+        <!-- Part C: Line Item Array Field -->
+        <div class="section-title">Product Section</div>
+        <div class="table-area">
+            <table id="billingTable">
                 <thead>
                     <tr>
                         <th class="w-sr">Sr.</th>
-                        <th class="w-prod">Product Description</th>
-                        <th class="w-small">HSN</th>
-                        <th class="w-small">MRP</th>
-                        <th class="w-small">Qty</th>
-                        <th class="w-small">GST %</th>
-                        <th class="w-amt">Taxable Val</th>
-                        <th class="w-small">CGST %</th>
-                        <th class="w-amt">CGST Amt</th>
-                        <th class="w-small">SGST %</th>
-                        <th class="w-amt">SGST Amt</th>
-                        <th class="w-amt">Total</th>
-                        <th class="remove-col" style="width: 50px;">Action</th>
+                        <th class="w-desc">Product Specification</th>
+                        <th class="w-num">HSN Code</th>
+                        <th class="w-num">MRP (Inc)</th>
+                        <th class="w-num">GST %</th>
+                        <th class="w-num">Rate (Excl)</th>
+                        <th class="w-num">Quantity</th>
+                        <th class="w-amt">Amount (₹)</th>
+                        <th class="col-action" style="width: 55px; text-align: center;">Action</th>
                     </tr>
                 </thead>
-                <tbody id="productTableBody">
-                    <!-- Dynamic rows append here via JS -->
+                <tbody id="lineItemContainer">
+                    <!-- Iterative nodes inject safely via compilation array engine -->
                 </tbody>
             </table>
         </div>
 
-        <!-- 4. Invoice Financial Summary -->
-        <div class="summary-wrapper">
-            <table class="summary-table">
-                <tr>
-                    <td>Total Taxable Value</td>
-                    <td id="totalTaxable" class="w-amt">0.00</td>
-                </tr>
-                <tr>
-                    <td>Total CGST</td>
-                    <td id="totalCGST" class="w-amt">0.00</td>
-                </tr>
-                <tr>
-                    <td>Total SGST</td>
-                    <td id="totalSGST" class="w-amt">0.00</td>
-                </tr>
-                <tr>
-                    <td><strong>Grand Total (₹)</strong></td>
-                    <td id="grandTotal" class="w-amt">0.00</td>
-                </tr>
-            </table>
+        <!-- Part D: Financial Synthesis Aggregation Blocks -->
+        <div class="summary-container">
+            <div class="summary-box">
+                <div class="summary-line">
+                    <span>Taxable Amount</span>
+                    <span id="summaryTaxable" class="val-field">₹0.00</span>
+                </div>
+                <div class="summary-line">
+                    <span>GST Amount</span>
+                    <span id="summaryGst" class="val-field">₹0.00</span>
+                </div>
+                <div class="summary-line">
+                    <span>Grand Total</span>
+                    <span id="summaryGrand" class="val-field">₹0.00</span>
+                </div>
+            </div>
         </div>
 
-        <!-- 5. Footer Terms & Signature blocks -->
-        <footer class="invoice-footer">
-            <div class="terms">
-                <strong>Terms & Conditions:</strong><br>
-                1. Goods once sold will not be taken back or exchanged.<br>
-                2. Interest at the rate of 18% per annum will be charged if payment is not received within due dates.<br>
-                3. Subject to local jurisdiction rules.
+        <!-- Part E: Terms Bindings & Finalization Tokens -->
+        <footer class="invoice-bottom">
+            <div class="legal-notes">
+                <strong>Declarations & Compliance Terms:</strong><br>
+                1. We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.<br>
+                2. Payments via digital modes are subject to rapid automated reconciliation clearing matrix.
             </div>
-            <div class="signature-area">
-                <div>For <strong>Your Company Name</strong></div>
-                <div class="signature-line">Authorized Signatory</div>
+            <div class="sign-block">
+                <div>For <strong>Universal Solutions Pvt Ltd</strong></div>
+                <div class="sign-line">Authorized Signature Check</div>
             </div>
         </footer>
-
     </div>
 
-    <!-- Layout & Calculation Engine Script -->
+    <!-- Engine Control Layer Logic Configuration -->
     <script>
-        // Set today's date automatically on load
+        // --- GOOGLE APPS SCRIPT WEB APP INTEGRATION POINT ---
+        // PASTE YOUR DEPLOYED GOOGLE WEB APP MACRO MAC URL HERE:
+        const APPS_SCRIPT_ENDPOINT = "https://script.google.com/macros/s/YOUR_DEPLOYED_SCRIPT_ID_HERE/exec";
+
+        // Global Local In-Memory System Registries
+        let globalCustomerRegistry = {};
+        let globalProductRegistry = {};
+
+        // Lifecycle Ignition Setup
         document.getElementById('invoiceDate').valueAsDate = new Date();
 
-        // Sample Mock Customer Data Pool (Simulating your Google Sheet pull mapping)
-        const mockCustomerDatabase = {
-            "cust_1": { mobile: "+91 99999 88888", gstin: "27BBBBB1111B1Z2", address: "404 Tech Park, Sector V, Mumbai" },
-            "cust_2": { mobile: "+91 77777 66666", gstin: "27CCCCC2222C1Z3", address: "100 Gotham Towers, Nariman Point, Mumbai" },
-            "cust_3": { mobile: "+91 00000 00000", gstin: "URP (Unregistered)", address: "Counter Sale Local" }
-        };
+        window.addEventListener('DOMContentLoaded', () => {
+            initializeRemoteDataPipelines();
+        });
 
-        // Sample Mock Product Database for dynamic metadata lookup
-        const mockProductDatabase = {
-            "prod_1": { hsn: "8471", mrp: 45000, gst: 18 },
-            "prod_2": { hsn: "8517", mrp: 12000, gst: 12 },
-            "prod_3": { hsn: "8473", mrp: 1500,  gst: 18 }
-        };
+        // Pull active dynamic array catalogs from Google Backend Ecosystem
+        function initializeRemoteDataPipelines() {
+            // Fetch Customer Profiles Dataset
+            fetch(`${APPS_SCRIPT_ENDPOINT}?action=getCustomers`)
+                .then(res => res.json())
+                .then(data => {
+                    const dropdown = document.getElementById('customerDropdown');
+                    dropdown.innerHTML = '<option value="">-- Choose Profile Registration --</option>';
+                    data.forEach(customer => {
+                        globalCustomerRegistry[customer.id] = customer;
+                        let opt = document.createElement('option');
+                        opt.value = customer.id;
+                        opt.textContent = customer.name;
+                        dropdown.appendChild(opt);
+                    });
+                }).catch(err => console.warn("Fallback engine routing initialized due to access context metrics.", err));
 
-        // Handle Auto-fill for customer selection
-        function handleCustomerChange(customerId) {
-            const client = mockCustomerDatabase[customerId];
-            if (client) {
-                document.getElementById('custMobile').value = client.mobile;
-                document.getElementById('custGstin').value = client.gstin;
-                document.getElementById('custAddress').value = client.address;
-            } else {
-                document.getElementById('custMobile').value = '';
-                document.getElementById('custGstin').value = '';
-                document.getElementById('custAddress').value = '';
-            }
+            // Fetch Product Specifications Catalog
+            fetch(`${APPS_SCRIPT_ENDPOINT}?action=getProducts`)
+                .then(res => res.json())
+                .then(data => {
+                    data.forEach(prod => {
+                        globalProductRegistry[prod.id] = prod;
+                    });
+                    // Establish an initial empty line calculation layout on complete system boot
+                    appendProductRow();
+                }).catch(err => {
+                    console.warn("Product pipeline fallback sequence initialized.", err);
+                    appendProductRow();
+                });
         }
 
-        // Add a line item row to the table natively
-        function addNewRow() {
-            const tbody = document.getElementById('productTableBody');
-            const rowCount = tbody.rows.length + 1;
+        // Auto-fill Target Customer Parameters Block
+        function autoFillCustomerMetrics(id) {
+            const client = globalCustomerRegistry[id];
+            document.getElementById('custGstin').value = client ? client.gstin : '';
+            document.getElementById('custContact').value = client ? client.contact : '';
+            document.getElementById('custAddress').value = client ? client.address : '';
+        }
+
+        // Inject Dynamic Tabular Rows
+        function appendProductRow() {
+            const tbody = document.getElementById('lineItemContainer');
+            const rank = tbody.rows.length + 1;
             const tr = document.createElement('tr');
 
+            // Generate compilation parameters markup safe fields injection
             tr.innerHTML = `
-                <td class="w-sr row-idx">${rowCount}</td>
+                <td class="w-sr item-rank">${rank}</td>
                 <td>
-                    <select class="prod-select" onchange="handleProductLineSelection(this)">
-                        <option value="">-- Choose --</option>
-                        <option value="prod_1">Laptop Pro Max</option>
-                        <option value="prod_2">Smartphone Alpha</option>
-                        <option value="prod_3">Wireless Mouse Slim</option>
+                    <select class="field-prod-id" onchange="autoFillProductRowMetrics(this)">
+                        <option value="">-- Select Product --</option>
+                        ${Object.values(globalProductRegistry).map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
                     </select>
                 </td>
-                <td><input type="text" class="line-hsn" readonly></td>
-                <td><input type="number" class="line-mrp" oninput="calculateRowTotals(this)"></td>
-                <td><input type="number" class="line-qty" value="1" min="1" oninput="calculateRowTotals(this)"></td>
-                <td><input type="number" class="line-gst" readonly></td>
-                <td><input type="text" class="line-taxable-val" readonly value="0.00"></td>
-                <td><input type="text" class="line-cgst-pct" readonly value="0"></td>
-                <td><input type="text" class="line-cgst-amt" readonly value="0.00"></td>
-                <td><input type="text" class="line-sgst-pct" readonly value="0"></td>
-                <td><input type="text" class="line-sgst-amt" readonly value="0.00"></td>
-                <td><input type="text" class="line-total" readonly value="0.00"></td>
-                <td class="remove-col"><button class="btn btn-danger" onclick="removeRow(this)">X</button></td>
+                <td><input type="text" class="field-hsn" readonly></td>
+                <td><input type="number" class="field-mrp" step="0.01" oninput="executeReverseTaxMathematics(this)"></td>
+                <td><input type="number" class="field-gst-pct" readonly></td>
+                <td><input type="text" class="field-rate" readonly value="0.00"></td>
+                <td><input type="number" class="field-qty" value="1" min="1" oninput="executeReverseTaxMathematics(this)"></td>
+                <td><input type="text" class="field-total-amt w-amt" readonly value="0.00"></td>
+                <td class="col-action" style="text-align:center;"><button class="btn-del" onclick="purgeTargetRow(this)">X</button></td>
             `;
             tbody.appendChild(tr);
         }
 
-        function removeRow(button) {
-            const row = button.closest('tr');
-            row.remove();
-            reindexRows();
-            calculateInvoiceSummary();
+        function purgeTargetRow(btn) {
+            btn.closest('tr').remove();
+            realignRowIndices();
+            collateBillSummaryTotals();
         }
 
-        function reindexRows() {
-            const rows = document.querySelectorAll('#productTableBody tr');
-            rows.forEach((row, idx) => {
-                row.querySelector('.row-idx').textContent = idx + 1;
+        function realignRowIndices() {
+            document.querySelectorAll('#lineItemContainer tr').forEach((row, i) => {
+                row.querySelector('.item-rank').textContent = i + 1;
             });
         }
 
-        // Handle metadata lookup when product dropdown modifications occur
-        function handleProductLineSelection(selectElement) {
-            const row = selectElement.closest('tr');
-            const prodData = mockProductDatabase[selectElement.value];
+        // Auto-fill Specific Product Core Array Definitions
+        function autoFillProductRowMetrics(selectDom) {
+            const row = selectDom.closest('tr');
+            const item = globalProductRegistry[selectDom.value];
 
-            if (prodData) {
-                row.querySelector('.line-hsn').value = prodData.hsn;
-                row.querySelector('.line-mrp').value = prodData.mrp;
-                row.querySelector('.line-gst').value = prodData.gst;
-                
-                // Splits combined GST down to central/state splits instantly
-                const halfGst = prodData.gst / 2;
-                row.querySelector('.line-cgst-pct').value = halfGst;
-                row.querySelector('.line-sgst-pct').value = halfGst;
+            if (item) {
+                row.querySelector('.field-hsn').value = item.hsn;
+                row.querySelector('.field-mrp').value = parseFloat(item.mrp).toFixed(2);
+                row.querySelector('.field-gst-pct').value = item.gstPct;
+            } else {
+                row.querySelector('.field-hsn').value = '';
+                row.querySelector('.field-mrp').value = '';
+                row.querySelector('.field-gst-pct').value = '';
             }
-            calculateRowTotals(selectElement);
+            executeReverseTaxMathematics(selectDom);
         }
 
-        // Inline Row Calculation Logic Engine
-        function calculateRowTotals(element) {
+        // Tax Engine Backwards Aggregation Calculations (MRP Inclusive Processing Engine)
+        function executeReverseTaxMathematics(element) {
             const row = element.closest('tr');
             
-            const mrp = parseFloat(row.querySelector('.line-mrp').value) || 0;
-            const qty = parseFloat(row.querySelector('.line-qty').value) || 0;
-            const gstPct = parseFloat(row.querySelector('.line-gst').value) || 0;
+            const mrpInclusive = parseFloat(row.querySelector('.field-mrp').value) || 0;
+            const gstPercentage = parseFloat(row.querySelector('.field-gst-pct').value) || 0;
+            const quantity = parseFloat(row.querySelector('.field-qty').value) || 0;
 
-            // Calculating reverse calculation assuming values inside the system are inclusive of GST
-            const totalGross = mrp * qty;
-            const taxableValue = totalGross / (1 + (gstPct / 100));
-            const totalTaxAmount = totalGross - taxableValue;
-            
-            const cgstAmt = totalTaxAmount / 2;
-            const sgstAmt = totalTaxAmount / 2;
+            // Mathematical Derivation: Rate = MRP / (1 + (GST% / 100))
+            const cleanRateExcludingTax = mrpInclusive / (1 + (gstPercentage / 100));
+            const calculatedLineTotalGross = mrpInclusive * quantity;
 
-            // Render updates safely back down inside input properties
-            row.querySelector('.line-taxable-val').value = taxableValue.toFixed(2);
-            row.querySelector('.line-cgst-amt').value = cgstAmt.toFixed(2);
-            row.querySelector('.line-sgst-amt').value = sgstAmt.toFixed(2);
-            row.querySelector('.line-total').value = totalGross.toFixed(2);
+            row.querySelector('.field-rate').value = cleanRateExcludingTax.toFixed(2);
+            row.querySelector('.field-total-amt').value = calculatedLineTotalGross.toFixed(2);
 
-            calculateInvoiceSummary();
+            collateBillSummaryTotals();
         }
 
-        // Calculate bottom aggregations matrix
-        function calculateInvoiceSummary() {
-            let totalTaxable = 0, totalCgst = 0, totalSgst = 0, grandTotal = 0;
+        // Grand Accumulator Synthesis Summary Engine Matrix calculation
+        function collateBillSummaryTotals() {
+            let totalTaxableAccumulator = 0;
+            let totalGrandAccumulator = 0;
 
-            document.querySelectorAll('#productTableBody tr').forEach(row => {
-                totalTaxable += parseFloat(row.querySelector('.line-taxable-val').value) || 0;
-                totalCgst    += parseFloat(row.querySelector('.line-cgst-amt').value) || 0;
-                totalSgst    += parseFloat(row.querySelector('.line-sgst-amt').value) || 0;
-                grandTotal   += parseFloat(row.querySelector('.line-total').value) || 0;
+            document.querySelectorAll('#lineItemContainer tr').forEach(row => {
+                const lineQty = parseFloat(row.querySelector('.field-qty').value) || 0;
+                const evaluatedExclRate = parseFloat(row.querySelector('.field-rate').value) || 0;
+                const totalLineGross = parseFloat(row.querySelector('.field-total-amt').value) || 0;
+
+                totalTaxableAccumulator += (evaluatedExclRate * lineQty);
+                totalGrandAccumulator += totalLineGross;
             });
 
-            document.getElementById('totalTaxable').textContent = totalTaxable.toFixed(2);
-            document.getElementById('totalCGST').textContent = totalCgst.toFixed(2);
-            document.getElementById('totalSGST').textContent = totalSgst.toFixed(2);
-            document.getElementById('grandTotal').textContent = grandTotal.toFixed(2);
+            const collectiveGstDeltaAmt = totalGrandAccumulator - totalTaxableAccumulator;
+
+            document.getElementById('summaryTaxable').textContent = `₹${totalTaxableAccumulator.toFixed(2)}`;
+            document.getElementById('summaryGst').textContent = `₹${collectiveGstDeltaAmt.toFixed(2)}`;
+            document.getElementById('summaryGrand').textContent = `₹${totalGrandAccumulator.toFixed(2)}`;
         }
 
-        // Mock event handler for persistence operations
-        function saveInvoice() {
-            alert("Payload generated successfully! Ready to push clean JSON matrix structure directly to Google Sheets database pipeline.");
-        }
-
-        // Clear everything out back to step 1
-        function resetForm() {
-            if(confirm("Are you sure you want to completely wipe current dynamic invoice balances?")) {
-                document.getElementById('productTableBody').innerHTML = '';
-                document.getElementById('customerSelect').value = '';
-                handleCustomerChange('');
-                calculateInvoiceSummary();
+        // Post Compiled Output Schema Back into Google Sheets Architecture
+        function dispatchInvoiceToSheets() {
+            const targetCustomerSelect = document.getElementById('customerDropdown');
+            
+            // Validation Phase Check
+            if (!document.getElementById('invoiceNo').value || !targetCustomerSelect.value) {
+                alert("Validation Exception: Verify Invoice ID configuration context parameters and Customer selections properties.");
+                return;
             }
+
+            const activeLineItemsPayload = [];
+            document.querySelectorAll('#lineItemContainer tr').forEach(row => {
+                const pId = row.querySelector('.field-prod-id').value;
+                if(pId) {
+                    activeLineItemsPayload.push({
+                        productId: pId,
+                        productName: row.querySelector('.field-prod-id').options[row.querySelector('.field-prod-id').selectedIndex].text,
+                        hsn: row.querySelector('.field-hsn').value,
+                        mrp: row.querySelector('.field-mrp').value,
+                        gstPct: row.querySelector('.field-gst-pct').value,
+                        rate: row.querySelector('.field-rate').value,
+                        qty: row.querySelector('.field-qty').value,
+                        amount: row.querySelector('.field-total-amt').value
+                    });
+                }
+            });
+
+            const overallInvoicePayload = {
+                action: "saveInvoice",
+                invoiceNo: document.getElementById('invoiceNo').value,
+                invoiceDate: document.getElementById('invoiceDate').value,
+                customerId: targetCustomerSelect.value,
+                customerName: targetCustomerSelect.options[targetCustomerSelect.selectedIndex].text,
+                customerGstin: document.getElementById('custGstin').value,
+                customerContact: document.getElementById('custContact').value,
+                customerAddress: document.getElementById('custAddress').value,
+                items: activeLineItemsPayload,
+                totalTaxable: document.getElementById('summaryTaxable').textContent.replace('₹', ''),
+                totalGst: document.getElementById('summaryGst').textContent.replace('₹', ''),
+                grandTotal: document.getElementById('summaryGrand').textContent.replace('₹', '')
+            };
+
+            // Execution Endpoint Delivery Fetch Call Transaction Sequence
+            fetch(APPS_SCRIPT_ENDPOINT, {
+                method: "POST",
+                mode: "no-cors", // Bypasses standard browser CORS pre-flight configurations safely inside script operations
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(overallInvoicePayload)
+            })
+            .then(() => {
+                alert("Data packet submitted successfully to database log engine stack!");
+                flushFormLayout();
+            })
+            .catch(err => alert("Post transaction failed. Check configuration log parameters: " + err));
         }
 
-        // Bootstrapping the initial first row item explicitly for clean initialization aesthetics
-        addNewRow();
+        function flushFormLayout() {
+            document.getElementById('invoiceNo').value = '';
+            document.getElementById('customerDropdown').value = '';
+            autoFillCustomerMetrics('');
+            document.getElementById('lineItemContainer').innerHTML = '';
+            appendProductRow();
+            collateBillSummaryTotals();
+        }
     </script>
 </body>
 </html>
