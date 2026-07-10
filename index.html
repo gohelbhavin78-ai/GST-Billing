@@ -3,12 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynamic GST Invoice Billing System</title>
+    <title>Enterprise GST Billing & Management Suite</title>
     <style>
         /* --- Layout & Reset Specs --- */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #f3f4f6; color: #2d3748; padding: 25px; }
         
+        /* --- Global App Navigation Bar --- */
+        .app-nav {
+            max-width: 1000px;
+            margin: 0 auto 20px auto;
+            background: #1a202c;
+            padding: 10px 20px;
+            border-radius: 8px;
+            display: flex;
+            gap: 15px;
+        }
+        .nav-btn {
+            background: transparent;
+            color: #a0aec0;
+            border: none;
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.2s;
+        }
+        .nav-btn:hover, .nav-btn.active {
+            color: #ffffff;
+            background: #4a5568;
+        }
+
+        /* --- Tab Views Layout --- */
+        .app-view { display: none; }
+        .app-view.active-view { display: block; }
+
         .invoice-card {
             max-width: 1000px;
             margin: 0 auto;
@@ -77,8 +107,8 @@
         /* --- Strict A4 Portrait Print Viewport Engine --- */
         @media print {
             body { background: transparent; padding: 0; color: #000; }
+            .app-nav, .control-panel, .btn-del, .col-action { display: none !important; }
             .invoice-card { max-width: 100%; width: 100%; box-shadow: none; padding: 0; margin: 0; }
-            .control-panel, .btn-del, .col-action { display: none !important; }
             input, select { border: none !important; appearance: none; -webkit-appearance: none; background: transparent !important; padding: 0 !important; color: #000 !important; }
             input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
             th { background: #f7fafc !important; border: 1px solid #cbd5e0 !important; }
@@ -89,147 +119,163 @@
 </head>
 <body>
 
-    <!-- Control Action Strips (Hidden During System Intermittent Prints) -->
-    <div class="control-panel">
-        <button class="btn btn-add" onclick="appendProductRow()">+ Add Product Line</button>
-        <button class="btn btn-save" onclick="dispatchInvoiceToSheets()">Save Bill Data</button>
-        <button class="btn btn-print" onclick="window.print()">Print / Save PDF</button>
-        <button class="btn btn-clear" onclick="flushFormLayout()">Reset Form</button>
+    <!-- Main Navigation Bar -->
+    <nav class="app-nav">
+        <button class="nav-btn active" onclick="switchView('invoiceView', this)">Invoice Generator</button>
+        <button class="nav-btn" onclick="switchView('customerView', this)">+ New Customer Registry</button>
+        <button class="nav-btn" onclick="switchView('productView', this)">+ New Product Catalog</button>
+    </nav>
+
+    <!-- VIEW 1: INVOICE GENERATOR -->
+    <div id="invoiceView" class="app-view active-view">
+        <div class="control-panel">
+            <button class="btn btn-add" onclick="appendProductRow()">+ Add Product Line</button>
+            <button class="btn btn-save" onclick="dispatchInvoiceToSheets()">Save Bill Data</button>
+            <button class="btn btn-print" onclick="window.print()">Print / Save PDF</button>
+            <button class="btn btn-clear" onclick="flushFormLayout()">Reset Form</button>
+        </div>
+
+        <div class="invoice-card">
+            <header class="biz-header">
+                <div class="logo-box">ENTERPRISE LOGO</div>
+                <div class="biz-details">
+                    <div class="biz-name">Universal Solutions Private Limited</div>
+                    <div>Infinity Benchmark, Plot G2, Block EP & GP, Sector V, Kolkata - 700091</div>
+                    <div><strong>GSTIN:</strong> 19AAACU1234K1Z2</div>
+                    <div><strong>Contact No:</strong> +91 33 4000 9000</div>
+                    <div><strong>Email:</strong> finance@universalsolutions.co.in</div>
+                </div>
+            </header>
+
+            <div class="grid-2">
+                <div>
+                    <div class="section-title">GST Invoice Details</div>
+                    <div class="form-row">
+                        <label>Invoice No</label>
+                        <input type="text" id="invoiceNo" placeholder="E.g., INV/2026/0102">
+                    </div>
+                    <div class="form-row">
+                        <label>Invoice Date</label>
+                        <input type="date" id="invoiceDate">
+                    </div>
+                </div>
+                <div>
+                    <div class="section-title">Customer Section</div>
+                    <div class="form-row">
+                        <label>Customer Name</label>
+                        <select id="customerDropdown" onchange="autoFillCustomerMetrics(this.value)">
+                            <option value="">-- Loading Profiles --</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label>GSTIN</label>
+                        <input type="text" id="custGstin" readonly placeholder="Awaiting Selection">
+                    </div>
+                    <div class="form-row">
+                        <label>Contact No</label>
+                        <input type="text" id="custContact" readonly placeholder="Awaiting Selection">
+                    </div>
+                    <div class="form-row">
+                        <label>Address</label>
+                        <input type="text" id="custAddress" readonly placeholder="Awaiting Selection">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-title">Product Section</div>
+            <div class="table-area">
+                <table id="billingTable">
+                    <thead>
+                        <tr>
+                            <th class="w-sr">Sr.</th>
+                            <th class="w-desc">Product Specification</th>
+                            <th class="w-num">HSN Code</th>
+                            <th class="w-num">MRP (Inc)</th>
+                            <th class="w-num">GST %</th>
+                            <th class="w-num">Rate (Excl)</th>
+                            <th class="w-num">Quantity</th>
+                            <th class="w-amt">Amount (₹)</th>
+                            <th class="col-action" style="width: 55px; text-align: center;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lineItemContainer"></tbody>
+                </table>
+            </div>
+
+            <div class="summary-container">
+                <div class="summary-box">
+                    <div class="summary-line"><span>Taxable Amount</span><span id="summaryTaxable" class="val-field">₹0.00</span></div>
+                    <div class="summary-line"><span>GST Amount</span><span id="summaryGst" class="val-field">₹0.00</span></div>
+                    <div class="summary-line"><span>Grand Total</span><span id="summaryGrand" class="val-field">₹0.00</span></div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Active Form Document Context -->
-    <div class="invoice-card">
-        
-        <!-- Corporate Identification Element -->
-        <header class="biz-header">
-            <div class="logo-box">ENTERPRISE LOGO</div>
-            <div class="biz-details">
-                <div class="biz-name">Universal Solutions Private Limited</div>
-                <div>Infinity Benchmark, Plot G2, Block EP & GP, Sector V, Kolkata - 700091</div>
-                <div><strong>GSTIN:</strong> 19AAACU1234K1Z2</div>
-                <div><strong>Contact No:</strong> +91 33 4000 9000</div>
-                <div><strong>Email:</strong> finance@universalsolutions.co.in</div>
-            </div>
-        </header>
-
-        <div class="grid-2">
-            <!-- Part A: Metadata Matrix -->
-            <div>
-                <div class="section-title">GST Invoice Details</div>
-                <div class="form-row">
-                    <label>Invoice No</label>
-                    <input type="text" id="invoiceNo" placeholder="E.g., INV/2026/0102">
+    <!-- VIEW 2: CUSTOMER ENTRY MANAGEMENT -->
+    <div id="customerView" class="app-view">
+        <div class="invoice-card" style="max-width: 600px;">
+            <div class="section-title">Add New Customer Registry</div>
+            <form id="customerForm" onsubmit="submitNewCustomer(event)">
+                <div class="form-row"><label>Customer ID</label><input type="text" id="newCustId" required placeholder="Unique ID (e.g., CUST101)"></div>
+                <div class="form-row"><label>Company/Name</label><input type="text" id="newCustName" required placeholder="Full Name"></div>
+                <div class="form-row"><label>GSTIN</label><input type="text" id="newCustGstin" placeholder="15-digit GSTIN or URP"></div>
+                <div class="form-row"><label>Contact No</label><input type="text" id="newCustContact" required placeholder="Mobile Number"></div>
+                <div class="form-row"><label>Billing Address</label><input type="text" id="newCustAddress" required placeholder="Full Address"></div>
+                <div style="margin-top: 20px; text-align: right;">
+                    <button type="submit" class="btn btn-save">Upload Customer Data</button>
                 </div>
-                <div class="form-row">
-                    <label>Invoice Date</label>
-                    <input type="date" id="invoiceDate">
-                </div>
-            </div>
+            </form>
+        </div>
+    </div>
 
-            <!-- Part B: Recipient Coordinates -->
-            <div>
-                <div class="section-title">Customer Section</div>
+    <!-- VIEW 3: PRODUCT ENTRY MANAGEMENT -->
+    <div id="productView" class="app-view">
+        <div class="invoice-card" style="max-width: 600px;">
+            <div class="section-title">Add New Product Specification</div>
+            <form id="productForm" onsubmit="submitNewProduct(event)">
+                <div class="form-row"><label>Product ID</label><input type="text" id="newProdId" required placeholder="Unique ID (e.g., PROD501)"></div>
+                <div class="form-row"><label>Product Name</label><input type="text" id="newProdName" required placeholder="Item Description"></div>
+                <div class="form-row"><label>HSN Code</label><input type="text" id="newProdHsn" required placeholder="8-digit HSN"></div>
+                <div class="form-row"><label>MRP (GST Incl.)</label><input type="number" id="newProdMrp" step="0.01" required placeholder="0.00"></div>
                 <div class="form-row">
-                    <label>Customer Name</label>
-                    <select id="customerDropdown" onchange="autoFillCustomerMetrics(this.value)">
-                        <option value="">-- Synchronizing Data Dropdown --</option>
+                    <label>GST Rate %</label>
+                    <select id="newProdGst" required>
+                        <option value="0">0%</option><option value="5">5%</option><option value="12">12%</option><option value="18" selected>18%</option><option value="28">28%</option>
                     </select>
                 </div>
-                <div class="form-row">
-                    <label>GSTIN</label>
-                    <input type="text" id="custGstin" readonly placeholder="Awaiting Selection">
+                <div style="margin-top: 20px; text-align: right;">
+                    <button type="submit" class="btn btn-save">Upload Product Item</button>
                 </div>
-                <div class="form-row">
-                    <label>Contact No</label>
-                    <input type="text" id="custContact" readonly placeholder="Awaiting Selection">
-                </div>
-                <div class="form-row">
-                    <label>Address</label>
-                    <input type="text" id="custAddress" readonly placeholder="Awaiting Selection">
-                </div>
-            </div>
+            </form>
         </div>
-
-        <!-- Part C: Line Item Array Field -->
-        <div class="section-title">Product Section</div>
-        <div class="table-area">
-            <table id="billingTable">
-                <thead>
-                    <tr>
-                        <th class="w-sr">Sr.</th>
-                        <th class="w-desc">Product Specification</th>
-                        <th class="w-num">HSN Code</th>
-                        <th class="w-num">MRP (Inc)</th>
-                        <th class="w-num">GST %</th>
-                        <th class="w-num">Rate (Excl)</th>
-                        <th class="w-num">Quantity</th>
-                        <th class="w-amt">Amount (₹)</th>
-                        <th class="col-action" style="width: 55px; text-align: center;">Action</th>
-                    </tr>
-                </thead>
-                <tbody id="lineItemContainer">
-                    <!-- Iterative nodes inject safely via compilation array engine -->
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Part D: Financial Synthesis Aggregation Blocks -->
-        <div class="summary-container">
-            <div class="summary-box">
-                <div class="summary-line">
-                    <span>Taxable Amount</span>
-                    <span id="summaryTaxable" class="val-field">₹0.00</span>
-                </div>
-                <div class="summary-line">
-                    <span>GST Amount</span>
-                    <span id="summaryGst" class="val-field">₹0.00</span>
-                </div>
-                <div class="summary-line">
-                    <span>Grand Total</span>
-                    <span id="summaryGrand" class="val-field">₹0.00</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Part E: Terms Bindings & Finalization Tokens -->
-        <footer class="invoice-bottom">
-            <div class="legal-notes">
-                <strong>Declarations & Compliance Terms:</strong><br>
-                1. We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.<br>
-                2. Payments via digital modes are subject to rapid automated reconciliation clearing matrix.
-            </div>
-            <div class="sign-block">
-                <div>For <strong>Universal Solutions Pvt Ltd</strong></div>
-                <div class="sign-line">Authorized Signature Check</div>
-            </div>
-        </footer>
     </div>
 
     <!-- Engine Control Layer Logic Configuration -->
     <script>
-        // --- GOOGLE APPS SCRIPT WEB APP INTEGRATION POINT ---
-        // PASTE YOUR DEPLOYED GOOGLE WEB APP MACRO MAC URL HERE:
+        // REPLACE WITH YOUR DEPLOYED GOOGLE WEB APP URL
         const APPS_SCRIPT_ENDPOINT = "https://script.google.com/macros/s/YOUR_DEPLOYED_SCRIPT_ID_HERE/exec";
 
-        // Global Local In-Memory System Registries
         let globalCustomerRegistry = {};
         let globalProductRegistry = {};
 
-        // Lifecycle Ignition Setup
         document.getElementById('invoiceDate').valueAsDate = new Date();
+        window.addEventListener('DOMContentLoaded', () => { initializeRemoteDataPipelines(); });
 
-        window.addEventListener('DOMContentLoaded', () => {
-            initializeRemoteDataPipelines();
-        });
+        function switchView(viewId, btnElement) {
+            document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active-view'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active-view');
+            btnElement.classList.add('active');
+        }
 
-        // Pull active dynamic array catalogs from Google Backend Ecosystem
         function initializeRemoteDataPipelines() {
-            // Fetch Customer Profiles Dataset
             fetch(`${APPS_SCRIPT_ENDPOINT}?action=getCustomers`)
                 .then(res => res.json())
                 .then(data => {
                     const dropdown = document.getElementById('customerDropdown');
                     dropdown.innerHTML = '<option value="">-- Choose Profile Registration --</option>';
+                    globalCustomerRegistry = {};
                     data.forEach(customer => {
                         globalCustomerRegistry[customer.id] = customer;
                         let opt = document.createElement('option');
@@ -237,24 +283,19 @@
                         opt.textContent = customer.name;
                         dropdown.appendChild(opt);
                     });
-                }).catch(err => console.warn("Fallback engine routing initialized due to access context metrics.", err));
+                }).catch(err => console.warn("Customer pipeline fetch skipped.", err));
 
-            // Fetch Product Specifications Catalog
             fetch(`${APPS_SCRIPT_ENDPOINT}?action=getProducts`)
                 .then(res => res.json())
                 .then(data => {
-                    data.forEach(prod => {
-                        globalProductRegistry[prod.id] = prod;
-                    });
-                    // Establish an initial empty line calculation layout on complete system boot
+                    globalProductRegistry = {};
+                    data.forEach(prod => { globalProductRegistry[prod.id] = prod; });
+                    const container = document.getElementById('lineItemContainer');
+                    container.innerHTML = '';
                     appendProductRow();
-                }).catch(err => {
-                    console.warn("Product pipeline fallback sequence initialized.", err);
-                    appendProductRow();
-                });
+                }).catch(err => { console.warn("Product pipeline fetch skipped.", err); appendProductRow(); });
         }
 
-        // Auto-fill Target Customer Parameters Block
         function autoFillCustomerMetrics(id) {
             const client = globalCustomerRegistry[id];
             document.getElementById('custGstin').value = client ? client.gstin : '';
@@ -262,13 +303,10 @@
             document.getElementById('custAddress').value = client ? client.address : '';
         }
 
-        // Inject Dynamic Tabular Rows
         function appendProductRow() {
             const tbody = document.getElementById('lineItemContainer');
             const rank = tbody.rows.length + 1;
             const tr = document.createElement('tr');
-
-            // Generate compilation parameters markup safe fields injection
             tr.innerHTML = `
                 <td class="w-sr item-rank">${rank}</td>
                 <td>
@@ -288,84 +326,56 @@
             tbody.appendChild(tr);
         }
 
-        function purgeTargetRow(btn) {
-            btn.closest('tr').remove();
-            realignRowIndices();
-            collateBillSummaryTotals();
-        }
+        function purgeTargetRow(btn) { btn.closest('tr').remove(); realignRowIndices(); collateBillSummaryTotals(); }
+        function realignRowIndices() { document.querySelectorAll('#lineItemContainer tr').forEach((row, i) => { row.querySelector('.item-rank').textContent = i + 1; }); }
 
-        function realignRowIndices() {
-            document.querySelectorAll('#lineItemContainer tr').forEach((row, i) => {
-                row.querySelector('.item-rank').textContent = i + 1;
-            });
-        }
-
-        // Auto-fill Specific Product Core Array Definitions
         function autoFillProductRowMetrics(selectDom) {
             const row = selectDom.closest('tr');
             const item = globalProductRegistry[selectDom.value];
-
             if (item) {
                 row.querySelector('.field-hsn').value = item.hsn;
                 row.querySelector('.field-mrp').value = parseFloat(item.mrp).toFixed(2);
                 row.querySelector('.field-gst-pct').value = item.gstPct;
             } else {
-                row.querySelector('.field-hsn').value = '';
-                row.querySelector('.field-mrp').value = '';
-                row.querySelector('.field-gst-pct').value = '';
+                row.querySelector('.field-hsn').value = ''; row.querySelector('.field-mrp').value = ''; row.querySelector('.field-gst-pct').value = '';
             }
             executeReverseTaxMathematics(selectDom);
         }
 
-        // Tax Engine Backwards Aggregation Calculations (MRP Inclusive Processing Engine)
         function executeReverseTaxMathematics(element) {
             const row = element.closest('tr');
-            
             const mrpInclusive = parseFloat(row.querySelector('.field-mrp').value) || 0;
             const gstPercentage = parseFloat(row.querySelector('.field-gst-pct').value) || 0;
             const quantity = parseFloat(row.querySelector('.field-qty').value) || 0;
 
-            // Mathematical Derivation: Rate = MRP / (1 + (GST% / 100))
             const cleanRateExcludingTax = mrpInclusive / (1 + (gstPercentage / 100));
             const calculatedLineTotalGross = mrpInclusive * quantity;
 
             row.querySelector('.field-rate').value = cleanRateExcludingTax.toFixed(2);
             row.querySelector('.field-total-amt').value = calculatedLineTotalGross.toFixed(2);
-
             collateBillSummaryTotals();
         }
 
-        // Grand Accumulator Synthesis Summary Engine Matrix calculation
         function collateBillSummaryTotals() {
-            let totalTaxableAccumulator = 0;
-            let totalGrandAccumulator = 0;
-
+            let totalTaxableAccumulator = 0, totalGrandAccumulator = 0;
             document.querySelectorAll('#lineItemContainer tr').forEach(row => {
                 const lineQty = parseFloat(row.querySelector('.field-qty').value) || 0;
                 const evaluatedExclRate = parseFloat(row.querySelector('.field-rate').value) || 0;
                 const totalLineGross = parseFloat(row.querySelector('.field-total-amt').value) || 0;
-
                 totalTaxableAccumulator += (evaluatedExclRate * lineQty);
                 totalGrandAccumulator += totalLineGross;
             });
-
             const collectiveGstDeltaAmt = totalGrandAccumulator - totalTaxableAccumulator;
-
             document.getElementById('summaryTaxable').textContent = `₹${totalTaxableAccumulator.toFixed(2)}`;
             document.getElementById('summaryGst').textContent = `₹${collectiveGstDeltaAmt.toFixed(2)}`;
             document.getElementById('summaryGrand').textContent = `₹${totalGrandAccumulator.toFixed(2)}`;
         }
 
-        // Post Compiled Output Schema Back into Google Sheets Architecture
         function dispatchInvoiceToSheets() {
             const targetCustomerSelect = document.getElementById('customerDropdown');
-            
-            // Validation Phase Check
             if (!document.getElementById('invoiceNo').value || !targetCustomerSelect.value) {
-                alert("Validation Exception: Verify Invoice ID configuration context parameters and Customer selections properties.");
-                return;
+                alert("Validation Error: Please fill out Invoice No and select a Customer."); return;
             }
-
             const activeLineItemsPayload = [];
             document.querySelectorAll('#lineItemContainer tr').forEach(row => {
                 const pId = row.querySelector('.field-prod-id').value;
@@ -383,33 +393,66 @@
                 }
             });
 
-            const overallInvoicePayload = {
-                action: "saveInvoice",
-                invoiceNo: document.getElementById('invoiceNo').value,
-                invoiceDate: document.getElementById('invoiceDate').value,
-                customerId: targetCustomerSelect.value,
-                customerName: targetCustomerSelect.options[targetCustomerSelect.selectedIndex].text,
-                customerGstin: document.getElementById('custGstin').value,
-                customerContact: document.getElementById('custContact').value,
-                customerAddress: document.getElementById('custAddress').value,
-                items: activeLineItemsPayload,
-                totalTaxable: document.getElementById('summaryTaxable').textContent.replace('₹', ''),
-                totalGst: document.getElementById('summaryGst').textContent.replace('₹', ''),
-                grandTotal: document.getElementById('summaryGrand').textContent.replace('₹', '')
-            };
-
-            // Execution Endpoint Delivery Fetch Call Transaction Sequence
             fetch(APPS_SCRIPT_ENDPOINT, {
                 method: "POST",
-                mode: "no-cors", // Bypasses standard browser CORS pre-flight configurations safely inside script operations
+                mode: "no-cors",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(overallInvoicePayload)
-            })
-            .then(() => {
-                alert("Data packet submitted successfully to database log engine stack!");
-                flushFormLayout();
-            })
-            .catch(err => alert("Post transaction failed. Check configuration log parameters: " + err));
+                body: JSON.stringify({
+                    action: "saveInvoice",
+                    invoiceNo: document.getElementById('invoiceNo').value,
+                    invoiceDate: document.getElementById('invoiceDate').value,
+                    customerName: targetCustomerSelect.options[targetCustomerSelect.selectedIndex].text,
+                    customerGstin: document.getElementById('custGstin').value,
+                    totalTaxable: document.getElementById('summaryTaxable').textContent.replace('₹', ''),
+                    totalGst: document.getElementById('summaryGst').textContent.replace('₹', ''),
+                    grandTotal: document.getElementById('summaryGrand').textContent.replace('₹', ''),
+                    items: activeLineItemsPayload
+                })
+            }).then(() => { alert("Invoice saved successfully!"); flushFormLayout(); });
+        }
+
+        function submitNewCustomer(e) {
+            e.preventDefault();
+            fetch(APPS_SCRIPT_ENDPOINT, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "addCustomer",
+                    id: document.getElementById('newCustId').value,
+                    name: document.getElementById('newCustName').value,
+                    gstin: document.getElementById('newCustGstin').value,
+                    contact: document.getElementById('newCustContact').value,
+                    address: document.getElementById('newCustAddress').value
+                })
+            }).then(() => {
+                alert("Customer registered successfully!");
+                document.getElementById('customerForm').reset();
+                initializeRemoteDataPipelines();
+                switchView('invoiceView', document.querySelector('.nav-btn'));
+            });
+        }
+
+        function submitNewProduct(e) {
+            e.preventDefault();
+            fetch(APPS_SCRIPT_ENDPOINT, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "addProduct",
+                    id: document.getElementById('newProdId').value,
+                    name: document.getElementById('newProdName').value,
+                    hsn: document.getElementById('newProdHsn').value,
+                    mrp: document.getElementById('newProdMrp').value,
+                    gstPct: document.getElementById('newProdGst').value
+                })
+            }).then(() => {
+                alert("Product item recorded successfully!");
+                document.getElementById('productForm').reset();
+                initializeRemoteDataPipelines();
+                switchView('invoiceView', document.querySelector('.nav-btn'));
+            });
         }
 
         function flushFormLayout() {
