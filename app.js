@@ -1,5 +1,5 @@
 // REPLACE WITH YOUR ACTIVE DEPLOYED GOOGLE APPS SCRIPT WEB APP URL
-const APPS_SCRIPT_ENDPOINT = "https://script.google.com/macros/s/YOUR_DEPLOYED_SCRIPT_ID_HERE/exec";
+const APPS_SCRIPT_ENDPOINT = "https://script.google.com/macros/s/AKfycbwYnovGrXZi_tSo3YRQzPpvm1K33kZbCppCLGGeKlvTNQRGk8fcvEqGVqdvJbPSxoCB/exec";
 
 let globalCustomerRegistry = {};
 let globalProductRegistry = {};
@@ -7,7 +7,6 @@ let globalProductRegistry = {};
 document.getElementById('invoiceDate').valueAsDate = new Date();
 window.addEventListener('DOMContentLoaded', () => { initializeRemoteDataPipelines(); });
 
-// Application Tab View Switcher
 function switchView(viewId, btnElement) {
     document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active-view'));
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -15,18 +14,12 @@ function switchView(viewId, btnElement) {
     btnElement.classList.add('active');
 }
 
-// Fetch Remote Data & Initialize Automated Next Invoice ID
 function initializeRemoteDataPipelines() {
-    // Generate/Fetch Sequential Auto-Incremented Invoice ID
     fetch(`${APPS_SCRIPT_ENDPOINT}?action=getNextInvoiceNo`)
         .then(res => res.json())
-        .then(data => {
-            document.getElementById('invoiceNo').value = data.nextInvoiceNo;
-        }).catch(() => {
-            document.getElementById('invoiceNo').value = "INV-" + Math.floor(1000 + Math.random() * 9000);
-        });
+        .then(data => { document.getElementById('invoiceNo').value = data.nextInvoiceNo; })
+        .catch(() => { document.getElementById('invoiceNo').value = "INV-" + Math.floor(1000 + Math.random() * 9000); });
 
-    // Fetch Customers Dropdown Data
     fetch(`${APPS_SCRIPT_ENDPOINT}?action=getCustomers`)
         .then(res => res.json())
         .then(data => {
@@ -40,9 +33,8 @@ function initializeRemoteDataPipelines() {
                 opt.textContent = customer.name;
                 dropdown.appendChild(opt);
             });
-        }).catch(err => console.warn("Customer dataset dropped. Using offline cache entries.", err));
+        }).catch(err => console.warn("Customer dataset dropped.", err));
 
-    // Fetch Products Dropdown Data
     fetch(`${APPS_SCRIPT_ENDPOINT}?action=getProducts`)
         .then(res => res.json())
         .then(data => {
@@ -74,7 +66,7 @@ function appendProductRow() {
         </td>
         <td><input type="text" class="field-hsn" readonly></td>
         <td><input type="number" class="field-mrp" step="0.01" oninput="executeReverseTaxMathematics(this)"></td>
-        <td><input type="text" class="field-rate" readonly value="0.00"></td>
+        <td><input type="number" class="field-rate" step="0.01" oninput="executeReverseTaxMathematics(this)"></td>
         <td><input type="number" class="field-cgst-pct" readonly value="0"></td>
         <td><input type="text" class="field-cgst-amt" readonly value="0.00"></td>
         <td><input type="number" class="field-sgst-pct" readonly value="0"></td>
@@ -95,36 +87,39 @@ function autoFillProductRowMetrics(selectDom) {
     if (item) {
         row.querySelector('.field-hsn').value = item.hsn;
         row.querySelector('.field-mrp').value = parseFloat(item.mrp).toFixed(2);
+        row.querySelector('.field-rate').value = parseFloat(item.rate || item.mrp).toFixed(2);
         
-        // Split Total Tax down into Central and State segments
         const splitTaxRate = parseFloat(item.gstPct || 0) / 2;
         row.querySelector('.field-cgst-pct').value = splitTaxRate;
         row.querySelector('.field-sgst-pct').value = splitTaxRate;
     } else {
-        row.querySelector('.field-hsn').value = ''; row.querySelector('.field-mrp').value = '';
+        row.querySelector('.field-hsn').value = ''; row.querySelector('.field-mrp').value = ''; row.querySelector('.field-rate').value = '0.00';
         row.querySelector('.field-cgst-pct').value = 0; row.querySelector('.field-sgst-pct').value = 0;
     }
     executeReverseTaxMathematics(selectDom);
 }
 
-// Calculations Backwards Aggregation (Bifurcated CGST/SGST Framework)
+// Fixed Calculations Engine: GST derived from MRP, added straight to selling rate.
 function executeReverseTaxMathematics(element) {
     const row = element.closest('tr');
     const mrpInclusive = parseFloat(row.querySelector('.field-mrp').value) || 0;
+    const sellingRate = parseFloat(row.querySelector('.field-rate').value) || 0;
     const cgstPct = parseFloat(row.querySelector('.field-cgst-pct').value) || 0;
     const sgstPct = parseFloat(row.querySelector('.field-sgst-pct').value) || 0;
     const totalGstPercentage = cgstPct + sgstPct;
     const quantity = parseFloat(row.querySelector('.field-qty').value) || 0;
 
-    // Deduce Core Net Rate (Base Rate = MRP / (1 + Tax%))
-    const baseExclRate = mrpInclusive / (1 + (totalGstPercentage / 100));
-    const rawTaxAmountPerItem = mrpInclusive - baseExclRate;
+    // 1. Find raw GST value hidden inside the standard MRP baseline metric rules
+    const baseExclRateFromMrp = mrpInclusive / (1 + (totalGstPercentage / 100));
+    const absoluteGstValuePerItem = mrpInclusive - baseExclRateFromMrp;
     
-    const cgstLineTotal = (rawTaxAmountPerItem / 2) * quantity;
-    const sgstLineTotal = (rawTaxAmountPerItem / 2) * quantity;
-    const calculatedLineTotalGross = mrpInclusive * quantity;
+    // 2. Fragment tax fields down into discrete accounting targets
+    const cgstLineTotal = (absoluteGstValuePerItem / 2) * quantity;
+    const sgstLineTotal = (absoluteGstValuePerItem / 2) * quantity;
+    
+    // 3. Gross Line Pricing Formula Rules Definition: (Selling Rate + Extracted MRP GST Component Value) * Qty
+    const calculatedLineTotalGross = (sellingRate + absoluteGstValuePerItem) * quantity;
 
-    row.querySelector('.field-rate').value = baseExclRate.toFixed(2);
     row.querySelector('.field-cgst-amt').value = cgstLineTotal.toFixed(2);
     row.querySelector('.field-sgst-amt').value = sgstLineTotal.toFixed(2);
     row.querySelector('.field-total-amt').value = calculatedLineTotalGross.toFixed(2);
@@ -132,22 +127,22 @@ function executeReverseTaxMathematics(element) {
 }
 
 function collateBillSummaryTotals() {
-    let totalTaxableAccumulator = 0, totalCgstAccumulator = 0, totalSgstAccumulator = 0, totalGrandAccumulator = 0;
+    let totalRateAccumulator = 0, totalCgstAccumulator = 0, totalSgstAccumulator = 0, totalGrandAccumulator = 0;
     
     document.querySelectorAll('#lineItemContainer tr').forEach(row => {
         const lineQty = parseFloat(row.querySelector('.field-qty').value) || 0;
-        const baseRate = parseFloat(row.querySelector('.field-rate').value) || 0;
+        const sellingRate = parseFloat(row.querySelector('.field-rate').value) || 0;
         const cgstAmt = parseFloat(row.querySelector('.field-cgst-amt').value) || 0;
         const sgstAmt = parseFloat(row.querySelector('.field-sgst-amt').value) || 0;
         const totalLineGross = parseFloat(row.querySelector('.field-total-amt').value) || 0;
 
-        totalTaxableAccumulator += (baseRate * lineQty);
+        totalRateAccumulator += (sellingRate * lineQty);
         totalCgstAccumulator += cgstAmt;
         totalSgstAccumulator += sgstAmt;
         totalGrandAccumulator += totalLineGross;
     });
 
-    document.getElementById('summaryTaxable').textContent = `₹${totalTaxableAccumulator.toFixed(2)}`;
+    document.getElementById('summaryTaxable').textContent = `₹${totalRateAccumulator.toFixed(2)}`;
     document.getElementById('summaryCgst').textContent = `₹${totalCgstAccumulator.toFixed(2)}`;
     document.getElementById('summarySgst').textContent = `₹${totalSgstAccumulator.toFixed(2)}`;
     document.getElementById('summaryGrand').textContent = `₹${totalGrandAccumulator.toFixed(2)}`;
@@ -234,6 +229,7 @@ function submitNewProduct(e) {
             name: document.getElementById('newProdName').value,
             hsn: document.getElementById('newProdHsn').value,
             mrp: document.getElementById('newProdMrp').value,
+            rate: document.getElementById('newProdRate').value, // Transmitted Selling Price Field Metric
             gstPct: document.getElementById('newProdGst').value
         })
     }).then(() => {
