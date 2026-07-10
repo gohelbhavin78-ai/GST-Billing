@@ -1,328 +1,252 @@
-//=====================================================
-// GST Billing System - app.js
-// Change WEB_APP_URL after deploying Google Apps Script
-//=====================================================
+// REPLACE WITH YOUR ACTIVE DEPLOYED GOOGLE APPS SCRIPT WEB APP URL
+const APPS_SCRIPT_ENDPOINT = "https://script.google.com/macros/s/YOUR_DEPLOYED_SCRIPT_ID_HERE/exec";
 
-// Dummy URL (Replace with your Google Apps Script URL)
-const WEB_APP_URL =
-    "https://script.google.com/macros/s/AKfycbx3uwG9LDgR0-TOW2z_dytS8206ENNxEMaTxQkHllDAg0EGBNX_A9T4haZ-eS0Cks7EgQ/exec";
+let globalCustomerRegistry = {};
+let globalProductRegistry = {};
 
-//-----------------------------------------------------
-// Global Arrays
-//-----------------------------------------------------
+document.getElementById('invoiceDate').valueAsDate = new Date();
+window.addEventListener('DOMContentLoaded', () => { initializeRemoteDataPipelines(); });
 
-let customers = [];
-let products = [];
-
-//-----------------------------------------------------
-// On Page Load
-//-----------------------------------------------------
-
-window.onload = function () {
-
-    generateInvoiceNo();
-
-    document.getElementById("invoiceDate").value =
-        new Date().toISOString().split("T")[0];
-
-    loadCustomers();
-
-    loadProducts();
-
-};
-
-//-----------------------------------------------------
-// Generate Invoice Number
-//-----------------------------------------------------
-
-function generateInvoiceNo() {
-
-    let d = new Date();
-
-    let invoice =
-        "INV" +
-        d.getFullYear() +
-        String(d.getMonth() + 1).padStart(2, "0") +
-        String(d.getDate()).padStart(2, "0") +
-        "-" +
-        Math.floor(Math.random() * 9000 + 1000);
-
-    document.getElementById("invoiceNo").value = invoice;
-
+// Application Tab View Switcher
+function switchView(viewId, btnElement) {
+    document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active-view'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(viewId).classList.add('active-view');
+    btnElement.classList.add('active');
 }
 
-//-----------------------------------------------------
-// Load Customers
-//-----------------------------------------------------
-
-function loadCustomers() {
-
-    fetch(WEB_APP_URL + "?action=customers")
-
+// Fetch Remote Data & Initialize Automated Next Invoice ID
+function initializeRemoteDataPipelines() {
+    // Generate/Fetch Sequential Auto-Incremented Invoice ID
+    fetch(`${APPS_SCRIPT_ENDPOINT}?action=getNextInvoiceNo`)
         .then(res => res.json())
-
         .then(data => {
-
-            customers = data;
-
-            let dropdown = document.getElementById("customerSelect");
-
-            dropdown.innerHTML =
-                '<option value="">Select Customer</option>';
-
-            customers.forEach((customer, index) => {
-
-                let option = document.createElement("option");
-
-                option.value = index;
-
-                option.textContent = customer.CustomerName;
-
-                dropdown.appendChild(option);
-
-            });
-
-        })
-
-        .catch(error => {
-
-            console.log(error);
-
-            alert("Unable to load customers.");
-
+            document.getElementById('invoiceNo').value = data.nextInvoiceNo;
+        }).catch(() => {
+            document.getElementById('invoiceNo').value = "INV-" + Math.floor(1000 + Math.random() * 9000);
         });
 
-}
-
-//-----------------------------------------------------
-// Load Products
-//-----------------------------------------------------
-
-function loadProducts() {
-
-    fetch(WEB_APP_URL + "?action=products")
-
+    // Fetch Customers Dropdown Data
+    fetch(`${APPS_SCRIPT_ENDPOINT}?action=getCustomers`)
         .then(res => res.json())
-
         .then(data => {
-
-            products = data;
-
-            let dropdown = document.getElementById("productSelect");
-
-            dropdown.innerHTML =
-                '<option value="">Select Product</option>';
-
-            products.forEach((product, index) => {
-
-                let option = document.createElement("option");
-
-                option.value = index;
-
-                option.textContent = product.ProductName;
-
-                dropdown.appendChild(option);
-
+            const dropdown = document.getElementById('customerDropdown');
+            dropdown.innerHTML = '<option value="">-- Choose Profile Registration --</option>';
+            globalCustomerRegistry = {};
+            data.forEach(customer => {
+                globalCustomerRegistry[customer.id] = customer;
+                let opt = document.createElement('option');
+                opt.value = customer.id;
+                opt.textContent = customer.name;
+                dropdown.appendChild(opt);
             });
+        }).catch(err => console.warn("Customer dataset dropped. Using offline cache entries.", err));
 
-        })
-
-        .catch(error => {
-
-            console.log(error);
-
-            alert("Unable to load products.");
-
-        });
-
+    // Fetch Products Dropdown Data
+    fetch(`${APPS_SCRIPT_ENDPOINT}?action=getProducts`)
+        .then(res => res.json())
+        .then(data => {
+            globalProductRegistry = {};
+            data.forEach(prod => { globalProductRegistry[prod.id] = prod; });
+            document.getElementById('lineItemContainer').innerHTML = '';
+            appendProductRow();
+        }).catch(err => { console.warn("Product dataset dropped.", err); appendProductRow(); });
 }
 
-//-----------------------------------------------------
-// Customer Selection
-//-----------------------------------------------------
-
-document
-    .getElementById("customerSelect")
-    .addEventListener("change", function () {
-
-        if (this.value === "") return;
-
-        let customer = customers[this.value];
-
-        document.getElementById("customerGST").value =
-            customer.GSTIN;
-
-        document.getElementById("customerAddress").value =
-            customer.Address;
-
-    });
-
-//-----------------------------------------------------
-// Product Selection
-//-----------------------------------------------------
-
-document
-    .getElementById("productSelect")
-    .addEventListener("change", function () {
-
-        if (this.value === "") return;
-
-        let product = products[this.value];
-
-        document.getElementById("hsn").value =
-            product.HSN;
-
-        document.getElementById("gstRate").value =
-            product.GST;
-
-        document.getElementById("rate").value =
-            product.Rate;
-
-        calculateBill();
-
-    });
-
-//-----------------------------------------------------
-// Quantity Change
-//-----------------------------------------------------
-
-document
-    .getElementById("qty")
-    .addEventListener("input", calculateBill);
-
-//-----------------------------------------------------
-// Bill Calculation
-//-----------------------------------------------------
-
-function calculateBill() {
-
-    let qty =
-        Number(document.getElementById("qty").value);
-
-    let rate =
-        Number(document.getElementById("rate").value);
-
-    let gst =
-        Number(document.getElementById("gstRate").value);
-
-    let taxable = qty * rate;
-
-    let gstAmount = taxable * gst / 100;
-
-    let grandTotal = taxable + gstAmount;
-
-    document.getElementById("amount").value =
-        taxable.toFixed(2);
-
-    document.getElementById("taxableAmount").value =
-        taxable.toFixed(2);
-
-    document.getElementById("gstAmount").value =
-        gstAmount.toFixed(2);
-
-    document.getElementById("grandTotal").value =
-        grandTotal.toFixed(2);
-
+function autoFillCustomerMetrics(id) {
+    const client = globalCustomerRegistry[id];
+    document.getElementById('custGstin').value = client ? client.gstin : '';
+    document.getElementById('custContact').value = client ? client.contact : '';
+    document.getElementById('custAddress').value = client ? client.address : '';
 }
 
-//-----------------------------------------------------
-// Save Bill
-//-----------------------------------------------------
+function appendProductRow() {
+    const tbody = document.getElementById('lineItemContainer');
+    const rank = tbody.rows.length + 1;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+        <td class="w-sr item-rank">${rank}</td>
+        <td>
+            <select class="field-prod-id" onchange="autoFillProductRowMetrics(this)">
+                <option value="">-- Select Product --</option>
+                ${Object.values(globalProductRegistry).map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+            </select>
+        </td>
+        <td><input type="text" class="field-hsn" readonly></td>
+        <td><input type="number" class="field-mrp" step="0.01" oninput="executeReverseTaxMathematics(this)"></td>
+        <td><input type="text" class="field-rate" readonly value="0.00"></td>
+        <td><input type="number" class="field-cgst-pct" readonly value="0"></td>
+        <td><input type="text" class="field-cgst-amt" readonly value="0.00"></td>
+        <td><input type="number" class="field-sgst-pct" readonly value="0"></td>
+        <td><input type="text" class="field-sgst-amt" readonly value="0.00"></td>
+        <td><input type="number" class="field-qty" value="1" min="1" oninput="executeReverseTaxMathematics(this)"></td>
+        <td><input type="text" class="field-total-amt w-amt" readonly value="0.00"></td>
+        <td class="col-action" style="text-align:center;"><button class="btn-del" onclick="purgeTargetRow(this)">X</button></td>
+    `;
+    tbody.appendChild(tr);
+}
 
-document
-    .getElementById("invoiceForm")
-    .addEventListener("submit", function (e) {
+function purgeTargetRow(btn) { btn.closest('tr').remove(); realignRowIndices(); collateBillSummaryTotals(); }
+function realignRowIndices() { document.querySelectorAll('#lineItemContainer tr').forEach((row, i) => { row.querySelector('.item-rank').textContent = i + 1; }); }
 
-        e.preventDefault();
+function autoFillProductRowMetrics(selectDom) {
+    const row = selectDom.closest('tr');
+    const item = globalProductRegistry[selectDom.value];
+    if (item) {
+        row.querySelector('.field-hsn').value = item.hsn;
+        row.querySelector('.field-mrp').value = parseFloat(item.mrp).toFixed(2);
+        
+        // Split Total Tax down into Central and State segments
+        const splitTaxRate = parseFloat(item.gstPct || 0) / 2;
+        row.querySelector('.field-cgst-pct').value = splitTaxRate;
+        row.querySelector('.field-sgst-pct').value = splitTaxRate;
+    } else {
+        row.querySelector('.field-hsn').value = ''; row.querySelector('.field-mrp').value = '';
+        row.querySelector('.field-cgst-pct').value = 0; row.querySelector('.field-sgst-pct').value = 0;
+    }
+    executeReverseTaxMathematics(selectDom);
+}
 
-        let invoice = {
+// Calculations Backwards Aggregation (Bifurcated CGST/SGST Framework)
+function executeReverseTaxMathematics(element) {
+    const row = element.closest('tr');
+    const mrpInclusive = parseFloat(row.querySelector('.field-mrp').value) || 0;
+    const cgstPct = parseFloat(row.querySelector('.field-cgst-pct').value) || 0;
+    const sgstPct = parseFloat(row.querySelector('.field-sgst-pct').value) || 0;
+    const totalGstPercentage = cgstPct + sgstPct;
+    const quantity = parseFloat(row.querySelector('.field-qty').value) || 0;
 
-            InvoiceNo:
-                document.getElementById("invoiceNo").value,
+    // Deduce Core Net Rate (Base Rate = MRP / (1 + Tax%))
+    const baseExclRate = mrpInclusive / (1 + (totalGstPercentage / 100));
+    const rawTaxAmountPerItem = mrpInclusive - baseExclRate;
+    
+    const cgstLineTotal = (rawTaxAmountPerItem / 2) * quantity;
+    const sgstLineTotal = (rawTaxAmountPerItem / 2) * quantity;
+    const calculatedLineTotalGross = mrpInclusive * quantity;
 
-            InvoiceDate:
-                document.getElementById("invoiceDate").value,
+    row.querySelector('.field-rate').value = baseExclRate.toFixed(2);
+    row.querySelector('.field-cgst-amt').value = cgstLineTotal.toFixed(2);
+    row.querySelector('.field-sgst-amt').value = sgstLineTotal.toFixed(2);
+    row.querySelector('.field-total-amt').value = calculatedLineTotalGross.toFixed(2);
+    collateBillSummaryTotals();
+}
 
-            Customer:
-                document.getElementById("customerSelect").selectedOptions[0].text,
+function collateBillSummaryTotals() {
+    let totalTaxableAccumulator = 0, totalCgstAccumulator = 0, totalSgstAccumulator = 0, totalGrandAccumulator = 0;
+    
+    document.querySelectorAll('#lineItemContainer tr').forEach(row => {
+        const lineQty = parseFloat(row.querySelector('.field-qty').value) || 0;
+        const baseRate = parseFloat(row.querySelector('.field-rate').value) || 0;
+        const cgstAmt = parseFloat(row.querySelector('.field-cgst-amt').value) || 0;
+        const sgstAmt = parseFloat(row.querySelector('.field-sgst-amt').value) || 0;
+        const totalLineGross = parseFloat(row.querySelector('.field-total-amt').value) || 0;
 
-            GSTIN:
-                document.getElementById("customerGST").value,
-
-            Address:
-                document.getElementById("customerAddress").value,
-
-            Product:
-                document.getElementById("productSelect").selectedOptions[0].text,
-
-            HSN:
-                document.getElementById("hsn").value,
-
-            GST:
-                document.getElementById("gstRate").value,
-
-            Rate:
-                document.getElementById("rate").value,
-
-            Qty:
-                document.getElementById("qty").value,
-
-            Amount:
-                document.getElementById("amount").value,
-
-            TaxableAmount:
-                document.getElementById("taxableAmount").value,
-
-            GSTAmount:
-                document.getElementById("gstAmount").value,
-
-            GrandTotal:
-                document.getElementById("grandTotal").value,
-
-            Remarks:
-                document.getElementById("remarks").value
-
-        };
-
-        fetch(WEB_APP_URL, {
-
-            method: "POST",
-
-            body: JSON.stringify(invoice)
-
-        })
-
-            .then(res => res.text())
-
-            .then(result => {
-
-                alert("GST Bill Saved Successfully.");
-
-                document.getElementById("invoiceForm").reset();
-
-                generateInvoiceNo();
-
-                document.getElementById("invoiceDate").value =
-                    new Date().toISOString().split("T")[0];
-
-                document.getElementById("customerGST").value = "";
-                document.getElementById("customerAddress").value = "";
-                document.getElementById("hsn").value = "";
-                document.getElementById("gstRate").value = "";
-                document.getElementById("rate").value = "";
-                document.getElementById("amount").value = "";
-                document.getElementById("taxableAmount").value = "";
-                document.getElementById("gstAmount").value = "";
-                document.getElementById("grandTotal").value = "";
-
-            })
-
-            .catch(error => {
-
-                console.log(error);
-
-                alert("Unable to save bill.");
-
-            });
-
+        totalTaxableAccumulator += (baseRate * lineQty);
+        totalCgstAccumulator += cgstAmt;
+        totalSgstAccumulator += sgstAmt;
+        totalGrandAccumulator += totalLineGross;
     });
+
+    document.getElementById('summaryTaxable').textContent = `₹${totalTaxableAccumulator.toFixed(2)}`;
+    document.getElementById('summaryCgst').textContent = `₹${totalCgstAccumulator.toFixed(2)}`;
+    document.getElementById('summarySgst').textContent = `₹${totalSgstAccumulator.toFixed(2)}`;
+    document.getElementById('summaryGrand').textContent = `₹${totalGrandAccumulator.toFixed(2)}`;
+}
+
+function dispatchInvoiceToSheets() {
+    const targetCustomerSelect = document.getElementById('customerDropdown');
+    if (!document.getElementById('invoiceNo').value || !targetCustomerSelect.value) {
+        alert("Validation Error: Verification fields incomplete."); return;
+    }
+    const activeLineItemsPayload = [];
+    document.querySelectorAll('#lineItemContainer tr').forEach(row => {
+        const pId = row.querySelector('.field-prod-id').value;
+        if(pId) {
+            activeLineItemsPayload.push({
+                productId: pId,
+                productName: row.querySelector('.field-prod-id').options[row.querySelector('.field-prod-id').selectedIndex].text,
+                hsn: row.querySelector('.field-hsn').value,
+                mrp: row.querySelector('.field-mrp').value,
+                rate: row.querySelector('.field-rate').value,
+                cgstPct: row.querySelector('.field-cgst-pct').value,
+                cgstAmt: row.querySelector('.field-cgst-amt').value,
+                sgstPct: row.querySelector('.field-sgst-pct').value,
+                sgstAmt: row.querySelector('.field-sgst-amt').value,
+                qty: row.querySelector('.field-qty').value,
+                amount: row.querySelector('.field-total-amt').value
+            });
+        }
+    });
+
+    fetch(APPS_SCRIPT_ENDPOINT, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            action: "saveInvoice",
+            invoiceNo: document.getElementById('invoiceNo').value,
+            invoiceDate: document.getElementById('invoiceDate').value,
+            customerName: targetCustomerSelect.options[targetCustomerSelect.selectedIndex].text,
+            customerGstin: document.getElementById('custGstin').value,
+            totalTaxable: document.getElementById('summaryTaxable').textContent.replace('₹', ''),
+            totalCgst: document.getElementById('summaryCgst').textContent.replace('₹', ''),
+            totalSgst: document.getElementById('summarySgst').textContent.replace('₹', ''),
+            grandTotal: document.getElementById('summaryGrand').textContent.replace('₹', ''),
+            items: activeLineItemsPayload
+        })
+    }).then(() => { 
+        alert("Invoice successfully dispatched!"); 
+        flushFormLayout(); 
+    });
+}
+
+function submitNewCustomer(e) {
+    e.preventDefault();
+    fetch(APPS_SCRIPT_ENDPOINT, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            action: "addCustomer",
+            id: document.getElementById('newCustId').value,
+            name: document.getElementById('newCustName').value,
+            gstin: document.getElementById('newCustGstin').value,
+            contact: document.getElementById('newCustContact').value,
+            address: document.getElementById('newCustAddress').value
+        })
+    }).then(() => {
+        alert("Customer database registry updated!");
+        document.getElementById('customerForm').reset();
+        initializeRemoteDataPipelines();
+        switchView('invoiceView', document.querySelector('.nav-btn'));
+    });
+}
+
+function submitNewProduct(e) {
+    e.preventDefault();
+    fetch(APPS_SCRIPT_ENDPOINT, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            action: "addProduct",
+            id: document.getElementById('newProdId').value,
+            name: document.getElementById('newProdName').value,
+            hsn: document.getElementById('newProdHsn').value,
+            mrp: document.getElementById('newProdMrp').value,
+            gstPct: document.getElementById('newProdGst').value
+        })
+    }).then(() => {
+        alert("Product specification ledger logs updated!");
+        document.getElementById('productForm').reset();
+        initializeRemoteDataPipelines();
+        switchView('invoiceView', document.querySelector('.nav-btn'));
+    });
+}
+
+function flushFormLayout() {
+    autoFillCustomerMetrics('');
+    document.getElementById('customerDropdown').value = '';
+    document.getElementById('lineItemContainer').innerHTML = '';
+    initializeRemoteDataPipelines();
+}
