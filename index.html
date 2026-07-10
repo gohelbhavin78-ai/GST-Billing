@@ -1,315 +1,395 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GST Billing System</title>
-
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
-
+    <title>Professional GST Invoice System</title>
     <style>
-        body {
-            background: #f5f7fa;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1100px;
-            margin: auto;
+        /* --- Core Styling & Reset --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f4f6f9; color: #333; padding: 20px; }
+        
+        /* --- Invoice Container --- */
+        .invoice-container {
+            max-width: 900px;
+            margin: 0 auto;
             background: #fff;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,.1);
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            border-radius: 8px;
         }
 
-        h2 {
-            text-align: center;
-            margin-bottom: 30px;
-        }
+        /* --- Grid & Layout Headers --- */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 25px; }
+        .section-title { font-size: 14px; font-weight: bold; color: #555; text-transform: uppercase; border-bottom: 2px solid #eee; padding-bottom: 5px; margin-bottom: 12px; }
+        
+        /* --- Business & Invoice Header --- */
+        .business-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 30px; border-bottom: 3px solid #333; padding-bottom: 20px; }
+        .logo-placeholder { width: 80px; height: 80px; background: #eaeaea; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #777; border-radius: 4px; }
+        .business-details { text-align: right; font-size: 14px; line-height: 1.5; }
+        .business-name { font-size: 24px; font-weight: 800; color: #111; margin-bottom: 4px; }
+        
+        /* --- Form Inputs --- */
+        .form-group { margin-bottom: 10px; display: flex; align-items: center; font-size: 14px; }
+        .form-group label { width: 130px; font-weight: 600; color: #444; }
+        .form-group input, .form-group select { flex: 1; padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        .form-group input:focus, .form-group select:focus { border-color: #4a90e2; outline: none; }
 
-        fieldset {
-            margin-bottom: 25px;
-        }
+        /* --- Table Styling --- */
+        .table-responsive { overflow-x: auto; margin: 30px 0; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+        th { background: #f8f9fa; color: #444; font-weight: 600; padding: 10px 6px; border: 1px solid #dee2e6; }
+        td { padding: 8px 6px; border: 1px solid #dee2e6; vertical-align: middle; }
+        td input, td select { width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 3px; font-size: 13px; }
+        
+        /* Column width handling */
+        .w-sr { width: 40px; text-align: center; }
+        .w-prod { width: 180px; }
+        .w-small { width: 65px; }
+        .w-amt { width: 90px; font-weight: 600; text-align: right; }
 
-        input[readonly],
-        textarea[readonly] {
-            background: #f3f3f3;
-        }
+        /* --- Action Controls --- */
+        .actions-bar { display: flex; gap: 10px; justify-content: flex-start; margin-bottom: 20px; }
+        .btn { padding: 10px 18px; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 14px; transition: background 0.2s; }
+        .btn-primary { background: #4a90e2; color: white; }
+        .btn-primary:hover { background: #357abd; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-secondary:hover { background: #5a6268; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-success:hover { background: #218838; }
+        .btn-danger { background: #dc3545; color: white; padding: 4px 8px; font-size: 12px; }
+        .btn-danger:hover { background: #c82333; }
+        .btn-reset { background: #f8f9fa; color: #333; border: 1px solid #ccc; }
+        .btn-reset:hover { background: #e2e6ea; }
 
-        table input,
-        table select {
-            margin: 0;
-        }
+        /* --- Summary Section --- */
+        .summary-wrapper { display: flex; justify-content: flex-end; margin-top: 20px; }
+        .summary-table { width: 350px; font-size: 14px; }
+        .summary-table td { padding: 8px 12px; border: 1px solid #dee2e6; }
+        .summary-table tr:last-child { font-weight: bold; background: #f8f9fa; font-size: 16px; }
 
-        tfoot input {
-            font-weight: bold;
-        }
+        /* --- Footer & Signatures --- */
+        .invoice-footer { margin-top: 50px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .terms { max-width: 50%; font-size: 12px; color: #666; line-height: 1.5; }
+        .signature-area { text-align: center; font-size: 14px; width: 200px; }
+        .signature-line { border-top: 1px solid #333; margin-top: 60px; padding-top: 5px; font-weight: 600; }
 
-        .btn {
-            text-align: center;
-            margin-top: 20px;
+        /* --- PRINT LAYOUT (A4 Portrait Integration) --- */
+        @media print {
+            body { background: none; padding: 0; color: #000; }
+            .invoice-container { max-width: 100%; width: 100%; box-shadow: none; padding: 0; margin: 0; }
+            .actions-bar, .btn-danger, .remove-col { display: none !important; }
+            input, select { border: none !important; appearance: none; -webkit-appearance: none; background: transparent; padding: 0 !important; }
+            input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+            table { font-size: 12px; }
+            th, td { padding: 6px 4px !important; }
+            @page { size: A4 portrait; margin: 15mm; }
         }
     </style>
-
 </head>
-
 <body>
 
-<div class="container">
-
-<h2>GST Invoice Entry</h2>
-
-<form id="invoiceForm">
-
-<!---------------- Invoice Details ---------------->
-
-<fieldset>
-
-<legend><strong>Invoice Details</strong></legend>
-
-<div class="grid">
-
-<label>
-Invoice Number
-<input
-type="text"
-id="invoiceNo"
-readonly>
-</label>
-
-<label>
-Invoice Date
-<input
-type="date"
-id="invoiceDate">
-</label>
-
-</div>
-
-</fieldset>
-
-<!---------------- Customer Details ---------------->
-
-<fieldset>
-
-<legend><strong>Customer Details</strong></legend>
-
-<div class="grid">
-
-<label>
-
-Select Customer
-
-<select id="customerSelect">
-
-<option value="">
-Loading Customers...
-</option>
-
-</select>
-
-</label>
-
-<label>
-
-GSTIN
-
-<input
-type="text"
-id="customerGST"
-readonly>
-
-</label>
-
-</div>
-
-<label>
-
-Customer Address
-
-<textarea
-id="customerAddress"
-rows="3"
-readonly></textarea>
-
-</label>
-
-</fieldset>
-
-<!---------------- Product Details ---------------->
-
-<fieldset>
-
-<legend><strong>Product Details</strong></legend>
-
-<table>
-
-<thead>
-
-<tr>
-
-<th width="30%">Product</th>
-
-<th>HSN</th>
-
-<th>GST%</th>
-
-<th>Rate</th>
-
-<th>Qty</th>
-
-<th>Amount</th>
-
-</tr>
-
-</thead>
-
-<tbody>
-
-<tr>
-
-<td>
-
-<select id="productSelect">
-
-<option value="">
-Loading Products...
-</option>
-
-</select>
-
-</td>
-
-<td>
-
-<input
-type="text"
-id="hsn"
-readonly>
-
-</td>
-
-<td>
-
-<input
-type="number"
-id="gstRate"
-readonly>
-
-</td>
-
-<td>
-
-<input
-type="number"
-id="rate"
-readonly>
-
-</td>
-
-<td>
-
-<input
-type="number"
-id="qty"
-min="1"
-value="1">
-
-</td>
-
-<td>
-
-<input
-type="number"
-id="amount"
-readonly>
-
-</td>
-
-</tr>
-
-</tbody>
-
-</table>
-
-</fieldset>
-
-<!---------------- Bill Summary ---------------->
-
-<fieldset>
-
-<legend><strong>Bill Summary</strong></legend>
-
-<div class="grid">
-
-<label>
-
-Taxable Amount
-
-<input
-type="number"
-id="taxableAmount"
-readonly>
-
-</label>
-
-<label>
-
-GST Amount
-
-<input
-type="number"
-id="gstAmount"
-readonly>
-
-</label>
-
-<label>
-
-Grand Total
-
-<input
-type="number"
-id="grandTotal"
-readonly>
-
-</label>
-
-</div>
-
-</fieldset>
-
-<!---------------- Notes ---------------->
-
-<fieldset>
-
-<legend><strong>Remarks</strong></legend>
-
-<textarea
-id="remarks"
-rows="3"
-placeholder="Optional Remarks"></textarea>
-
-</fieldset>
-
-<div class="btn">
-
-<button
-type="submit"
-id="saveBill">
-
-Save GST Bill
-
-</button>
-
-</div>
-
-</form>
-
-</div>
-
-<script src="app.js"></script>
-
+    <!-- Top Action Controls -->
+    <div class="invoice-container actions-bar">
+        <button class="btn btn-secondary" onclick="addNewRow()">+ Add Product</button>
+        <button class="btn btn-success" onclick="saveInvoice()">Save Bill</button>
+        <button class="btn btn-primary" onclick="window.print()">Print / Save PDF</button>
+        <button class="btn btn-reset" onclick="resetForm()">Reset</button>
+    </div>
+
+    <!-- Main Invoice Document -->
+    <div class="invoice-container">
+        
+        <!-- 1. Business Header -->
+        <header class="business-header">
+            <div class="logo-placeholder">
+                <!-- Replace with your real <img> tag -->
+                COMPANY LOGO
+            </div>
+            <div class="business-details">
+                <div class="business-name">Your Company Name</div>
+                <div>123, Business Galaxy, Commercial Hub, Mumbai - 400001</div>
+                <div><strong>GSTIN:</strong> 27AAAAA0000A1Z5</div>
+                <div><strong>Mobile:</strong> +91 98765 43210</div>
+                <div><strong>Email:</strong> billing@yourcompany.com</div>
+            </div>
+        </header>
+
+        <!-- 2. Invoice Meta & Customer Grid -->
+        <div class="grid-2">
+            <!-- Invoice Core Details -->
+            <div>
+                <div class="section-title">Invoice Details</div>
+                <div class="form-group">
+                    <label>Invoice Number</label>
+                    <input type="text" id="invoiceNum" value="INV-2026-001">
+                </div>
+                <div class="form-group">
+                    <label>Invoice Date</label>
+                    <input type="date" id="invoiceDate">
+                </div>
+                <div class="form-group">
+                    <label>Place of Supply</label>
+                    <input type="text" id="placeOfSupply" value="Maharashtra (27)">
+                </div>
+                <div class="form-group">
+                    <label>Payment Mode</label>
+                    <select id="paymentMode">
+                        <option value="Cash">Cash</option>
+                        <option value="UPI">UPI / QR Code</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Credit">Credit</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Customer Details Section -->
+            <div>
+                <div class="section-title">Customer Details</div>
+                <div class="form-group">
+                    <label>Customer Name</label>
+                    <!-- Drops down dynamically. Triggers autofill script on change -->
+                    <select id="customerSelect" onchange="handleCustomerChange(this.value)">
+                        <option value="">-- Select Customer --</option>
+                        <option value="cust_1">Acme Corporations</option>
+                        <option value="cust_2">Wayne Enterprises</option>
+                        <option value="cust_3">Retail Walk-in Customer</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Mobile Number</label>
+                    <input type="text" id="custMobile" placeholder="Auto-fills">
+                </div>
+                <div class="form-group">
+                    <label>GSTIN</label>
+                    <input type="text" id="custGstin" placeholder="Auto-fills / Optional">
+                </div>
+                <div class="form-group">
+                    <label>Billing Address</label>
+                    <input type="text" id="custAddress" placeholder="Auto-fills">
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Dynamic Products Table -->
+        <div class="table-responsive">
+            <table id="productsTable">
+                <thead>
+                    <tr>
+                        <th class="w-sr">Sr.</th>
+                        <th class="w-prod">Product Description</th>
+                        <th class="w-small">HSN</th>
+                        <th class="w-small">MRP</th>
+                        <th class="w-small">Qty</th>
+                        <th class="w-small">GST %</th>
+                        <th class="w-amt">Taxable Val</th>
+                        <th class="w-small">CGST %</th>
+                        <th class="w-amt">CGST Amt</th>
+                        <th class="w-small">SGST %</th>
+                        <th class="w-amt">SGST Amt</th>
+                        <th class="w-amt">Total</th>
+                        <th class="remove-col" style="width: 50px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="productTableBody">
+                    <!-- Dynamic rows append here via JS -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 4. Invoice Financial Summary -->
+        <div class="summary-wrapper">
+            <table class="summary-table">
+                <tr>
+                    <td>Total Taxable Value</td>
+                    <td id="totalTaxable" class="w-amt">0.00</td>
+                </tr>
+                <tr>
+                    <td>Total CGST</td>
+                    <td id="totalCGST" class="w-amt">0.00</td>
+                </tr>
+                <tr>
+                    <td>Total SGST</td>
+                    <td id="totalSGST" class="w-amt">0.00</td>
+                </tr>
+                <tr>
+                    <td><strong>Grand Total (₹)</strong></td>
+                    <td id="grandTotal" class="w-amt">0.00</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- 5. Footer Terms & Signature blocks -->
+        <footer class="invoice-footer">
+            <div class="terms">
+                <strong>Terms & Conditions:</strong><br>
+                1. Goods once sold will not be taken back or exchanged.<br>
+                2. Interest at the rate of 18% per annum will be charged if payment is not received within due dates.<br>
+                3. Subject to local jurisdiction rules.
+            </div>
+            <div class="signature-area">
+                <div>For <strong>Your Company Name</strong></div>
+                <div class="signature-line">Authorized Signatory</div>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- Layout & Calculation Engine Script -->
+    <script>
+        // Set today's date automatically on load
+        document.getElementById('invoiceDate').valueAsDate = new Date();
+
+        // Sample Mock Customer Data Pool (Simulating your Google Sheet pull mapping)
+        const mockCustomerDatabase = {
+            "cust_1": { mobile: "+91 99999 88888", gstin: "27BBBBB1111B1Z2", address: "404 Tech Park, Sector V, Mumbai" },
+            "cust_2": { mobile: "+91 77777 66666", gstin: "27CCCCC2222C1Z3", address: "100 Gotham Towers, Nariman Point, Mumbai" },
+            "cust_3": { mobile: "+91 00000 00000", gstin: "URP (Unregistered)", address: "Counter Sale Local" }
+        };
+
+        // Sample Mock Product Database for dynamic metadata lookup
+        const mockProductDatabase = {
+            "prod_1": { hsn: "8471", mrp: 45000, gst: 18 },
+            "prod_2": { hsn: "8517", mrp: 12000, gst: 12 },
+            "prod_3": { hsn: "8473", mrp: 1500,  gst: 18 }
+        };
+
+        // Handle Auto-fill for customer selection
+        function handleCustomerChange(customerId) {
+            const client = mockCustomerDatabase[customerId];
+            if (client) {
+                document.getElementById('custMobile').value = client.mobile;
+                document.getElementById('custGstin').value = client.gstin;
+                document.getElementById('custAddress').value = client.address;
+            } else {
+                document.getElementById('custMobile').value = '';
+                document.getElementById('custGstin').value = '';
+                document.getElementById('custAddress').value = '';
+            }
+        }
+
+        // Add a line item row to the table natively
+        function addNewRow() {
+            const tbody = document.getElementById('productTableBody');
+            const rowCount = tbody.rows.length + 1;
+            const tr = document.createElement('tr');
+
+            tr.innerHTML = `
+                <td class="w-sr row-idx">${rowCount}</td>
+                <td>
+                    <select class="prod-select" onchange="handleProductLineSelection(this)">
+                        <option value="">-- Choose --</option>
+                        <option value="prod_1">Laptop Pro Max</option>
+                        <option value="prod_2">Smartphone Alpha</option>
+                        <option value="prod_3">Wireless Mouse Slim</option>
+                    </select>
+                </td>
+                <td><input type="text" class="line-hsn" readonly></td>
+                <td><input type="number" class="line-mrp" oninput="calculateRowTotals(this)"></td>
+                <td><input type="number" class="line-qty" value="1" min="1" oninput="calculateRowTotals(this)"></td>
+                <td><input type="number" class="line-gst" readonly></td>
+                <td><input type="text" class="line-taxable-val" readonly value="0.00"></td>
+                <td><input type="text" class="line-cgst-pct" readonly value="0"></td>
+                <td><input type="text" class="line-cgst-amt" readonly value="0.00"></td>
+                <td><input type="text" class="line-sgst-pct" readonly value="0"></td>
+                <td><input type="text" class="line-sgst-amt" readonly value="0.00"></td>
+                <td><input type="text" class="line-total" readonly value="0.00"></td>
+                <td class="remove-col"><button class="btn btn-danger" onclick="removeRow(this)">X</button></td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        function removeRow(button) {
+            const row = button.closest('tr');
+            row.remove();
+            reindexRows();
+            calculateInvoiceSummary();
+        }
+
+        function reindexRows() {
+            const rows = document.querySelectorAll('#productTableBody tr');
+            rows.forEach((row, idx) => {
+                row.querySelector('.row-idx').textContent = idx + 1;
+            });
+        }
+
+        // Handle metadata lookup when product dropdown modifications occur
+        function handleProductLineSelection(selectElement) {
+            const row = selectElement.closest('tr');
+            const prodData = mockProductDatabase[selectElement.value];
+
+            if (prodData) {
+                row.querySelector('.line-hsn').value = prodData.hsn;
+                row.querySelector('.line-mrp').value = prodData.mrp;
+                row.querySelector('.line-gst').value = prodData.gst;
+                
+                // Splits combined GST down to central/state splits instantly
+                const halfGst = prodData.gst / 2;
+                row.querySelector('.line-cgst-pct').value = halfGst;
+                row.querySelector('.line-sgst-pct').value = halfGst;
+            }
+            calculateRowTotals(selectElement);
+        }
+
+        // Inline Row Calculation Logic Engine
+        function calculateRowTotals(element) {
+            const row = element.closest('tr');
+            
+            const mrp = parseFloat(row.querySelector('.line-mrp').value) || 0;
+            const qty = parseFloat(row.querySelector('.line-qty').value) || 0;
+            const gstPct = parseFloat(row.querySelector('.line-gst').value) || 0;
+
+            // Calculating reverse calculation assuming values inside the system are inclusive of GST
+            const totalGross = mrp * qty;
+            const taxableValue = totalGross / (1 + (gstPct / 100));
+            const totalTaxAmount = totalGross - taxableValue;
+            
+            const cgstAmt = totalTaxAmount / 2;
+            const sgstAmt = totalTaxAmount / 2;
+
+            // Render updates safely back down inside input properties
+            row.querySelector('.line-taxable-val').value = taxableValue.toFixed(2);
+            row.querySelector('.line-cgst-amt').value = cgstAmt.toFixed(2);
+            row.querySelector('.line-sgst-amt').value = sgstAmt.toFixed(2);
+            row.querySelector('.line-total').value = totalGross.toFixed(2);
+
+            calculateInvoiceSummary();
+        }
+
+        // Calculate bottom aggregations matrix
+        function calculateInvoiceSummary() {
+            let totalTaxable = 0, totalCgst = 0, totalSgst = 0, grandTotal = 0;
+
+            document.querySelectorAll('#productTableBody tr').forEach(row => {
+                totalTaxable += parseFloat(row.querySelector('.line-taxable-val').value) || 0;
+                totalCgst    += parseFloat(row.querySelector('.line-cgst-amt').value) || 0;
+                totalSgst    += parseFloat(row.querySelector('.line-sgst-amt').value) || 0;
+                grandTotal   += parseFloat(row.querySelector('.line-total').value) || 0;
+            });
+
+            document.getElementById('totalTaxable').textContent = totalTaxable.toFixed(2);
+            document.getElementById('totalCGST').textContent = totalCgst.toFixed(2);
+            document.getElementById('totalSGST').textContent = totalSgst.toFixed(2);
+            document.getElementById('grandTotal').textContent = grandTotal.toFixed(2);
+        }
+
+        // Mock event handler for persistence operations
+        function saveInvoice() {
+            alert("Payload generated successfully! Ready to push clean JSON matrix structure directly to Google Sheets database pipeline.");
+        }
+
+        // Clear everything out back to step 1
+        function resetForm() {
+            if(confirm("Are you sure you want to completely wipe current dynamic invoice balances?")) {
+                document.getElementById('productTableBody').innerHTML = '';
+                document.getElementById('customerSelect').value = '';
+                handleCustomerChange('');
+                calculateInvoiceSummary();
+            }
+        }
+
+        // Bootstrapping the initial first row item explicitly for clean initialization aesthetics
+        addNewRow();
+    </script>
 </body>
 </html>
