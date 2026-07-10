@@ -80,7 +80,7 @@
                             <th class="w-desc">Product Specification</th>
                             <th class="w-num">HSN Code</th>
                             <th class="w-num">MRP (Inc)</th>
-                            <th class="w-num">Base Rate</th>
+                            <th class="w-num">Selling Rate</th>
                             <th class="w-num">CGST %</th>
                             <th class="w-num">CGST Amt</th>
                             <th class="w-num">SGST %</th>
@@ -96,12 +96,33 @@
 
             <div class="summary-container">
                 <div class="summary-box">
-                    <div class="summary-line"><span>Taxable Amount</span><span id="summaryTaxable" class="val-field">₹0.00</span></div>
-                    <div class="summary-line"><span>Total CGST</span><span id="summaryCgst" class="val-field">₹0.00</span></div>
-                    <div class="summary-line"><span>Total SGST</span><span id="summarySgst" class="val-field">₹0.00</span></div>
-                    <div class="summary-line"><span>Grand Total</span><span id="summaryGrand" class="val-field">₹0.00</span></div>
+                    <div class="summary-line"><span>Total Base Rate</span><span id="summaryTaxable" class="val-field">₹0.00</span></div>
+                    <div class="summary-line"><span>Total CGST (from MRP)</span><span id="summaryCgst" class="val-field">₹0.00</span></div>
+                    <div class="summary-line"><span>Total SGST (from MRP)</span><span id="summarySgst" class="val-field">₹0.00</span></div>
+                    <div class="summary-line"><span>Grand Total (Rate + GST)</span><span id="summaryGrand" class="val-field">₹0.00</span></div>
                 </div>
             </div>
+
+            <!-- New Professional Invoice Footer Block -->
+            <footer class="invoice-footer">
+                <div class="footer-grid">
+                    <div class="terms-box">
+                        <div class="footer-title">Terms & Conditions</div>
+                        <ol class="terms-list">
+                            <li>Goods once sold will not be taken back or exchanged.</li>
+                            <li>Interest at the rate of 18% per annum will be charged if payment is not made within 30 days.</li>
+                            <li>All disputes are subject to local judicial jurisdiction only.</li>
+                        </ol>
+                    </div>
+                    <div class="sig-box signature-space">
+                        <div class="signature-line">Customer Signature</div>
+                    </div>
+                    <div class="sig-box signature-space">
+                        <div class="company-seal-tag">For Universal Solutions Pvt Ltd</div>
+                        <div class="signature-line">Authorized Signature</div>
+                    </div>
+                </div>
+            </footer>
         </div>
     </div>
 
@@ -131,10 +152,16 @@
                 <div class="form-row"><label>Product Name</label><input type="text" id="newProdName" required placeholder="Item Description"></div>
                 <div class="form-row"><label>HSN Code</label><input type="text" id="newProdHsn" required placeholder="8-digit HSN"></div>
                 <div class="form-row"><label>MRP (GST Incl.)</label><input type="number" id="newProdMrp" step="0.01" required placeholder="0.00"></div>
+                <div class="form-row"><label>Selling Rate (Excl.)</label><input type="number" id="newProdRate" step="0.01" required placeholder="0.00"></div>
                 <div class="form-row">
                     <label>GST Rate %</label>
                     <select id="newProdGst" required>
-                        <option value="0">0%</option><option value="5">5%</option><option value="12">12%</option><option value="18" selected>18%</option><option value="28">28%</option>
+                        <option value="0">0%</option>
+                        <option value="5">5%</option>
+                        <option value="12">12%</option>
+                        <option value="18" selected>18%</option>
+                        <option value="28">28%</option>
+                        <option value="40">40%</option> <!-- Added 40% Slab -->
                     </select>
                 </div>
                 <div style="margin-top: 20px; text-align: right;">
@@ -144,7 +171,6 @@
         </div>
     </div>
 
-    <!-- Main Dynamic Application Engine Script Link -->
     <script src="app.js"></script>
 </body>
 </html>
