@@ -102,3 +102,62 @@ td input[readonly] { background: #f7fafc; border-color: #e2e8f0; }
     td { border: 1px solid #cbd5e0 !important; padding: 6px 4px !important; }
     @page { size: A4 portrait; margin: 12mm; }
 }
+
+
+/* --- Document Footer & Signature Panels --- */
+.invoice-footer {
+    margin-top: 50px;
+    border-top: 2px solid #1a202c;
+    padding-top: 20px;
+}
+.footer-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 20px;
+}
+.footer-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #4a5568;
+    margin-bottom: 8px;
+}
+.terms-list {
+    font-size: 11px;
+    color: #718096;
+    padding-left: 15px;
+    line-height: 1.5;
+}
+.signature-space {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    border: 1px dashed #cbd5e0;
+    border-radius: 6px;
+    height: 110px;
+    padding-bottom: 10px;
+    background: #fdfdfd;
+}
+.company-seal-tag {
+    font-size: 11px;
+    font-weight: 700;
+    color: #4a5568;
+    margin-top: 8px;
+    margin-bottom: auto;
+}
+.signature-line {
+    font-size: 12px;
+    font-weight: 600;
+    color: #2d3748;
+    border-top: 1px solid #718096;
+    width: 85%;
+    text-align: center;
+    padding-top: 5px;
+}
+
+/* Print Handling fixes for Footer alignment */
+@media print {
+    .invoice-footer { margin-top: 80px; page-break-inside: avoid; }
+    .signature-space { border: 1px solid #cbd5e0 !important; background: transparent !important; }
+}
